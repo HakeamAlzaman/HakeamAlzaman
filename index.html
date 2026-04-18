@@ -10,6 +10,9 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background: #0a0a12; color: white; }
@@ -48,6 +51,9 @@
         .critical-alert { animation: flashRed 1s infinite !important; border-width: 4px !important; }
 
         #nav-hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #3498db; padding: 10px 20px; border-radius: 30px; z-index: 1001; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-weight: bold; }
+
+        /* إخفاء واجهة التوجيه النصية الخاصة بالمكتبة (لأننا نحتاج المسار على الخريطة فقط) */
+        .leaflet-routing-container { display: none !important; }
     </style>
 </head>
 <body>
@@ -61,7 +67,7 @@
     </div>
     <div class="controls">
         <button id="btn-start" class="btn">📡 تفعيل التتبع</button>
-        <button id="btn-nav" class="btn">📍 تحديد وجهة آمنة</button>
+        <button id="btn-nav" class="btn">📍 مسار على الطريق</button>
         <button id="btn-save" class="btn">💾 حفظ المسار KML</button>
     </div>
 </div>
@@ -79,9 +85,7 @@
 <div id="map-container"><div id="map"></div></div>
 
 <script>
-    // ترتيب المناطق مهم (من الأكبر إلى الأصغر/الأخطر) لكي تظهر التنبيهات بالشكل الصحيح
     const zonesData = [
-        // 1. النطاق الأصفر الخارجي (الأكبر مساحة)
         {
             name: "النطاق الخارجي الأصفر", color: "#FFD700", 
             msg: "أنت الآن داخل النطاق الخارجي الأصفر. يرجى الانتباه للتنظيمات المبدئية قبل الدخول للمناطق المركزية.",
@@ -96,7 +100,6 @@
                 [21.3114619988825, 40.26186344075736]
             ]
         },
-        // 2. الورديات
         { 
             name: "الوردية الأولى", color: "#F57C00", msg: "نطاق منع نقل غير المصرح لهم. تأكد من حمل التراخيص اللازمة لتجنب العقوبات.",
             coords: [[21.4205663,39.7784752],[21.4391024,39.775042],[21.4397415,39.7606225],[21.4359067,39.7571892],[21.4314325,39.7482628],[21.4298346,39.7444863],[21.4298346,39.7365899],[21.4288759,39.7247452],[21.4248809,39.7189087],[21.4218447,39.709124],[21.4180094,39.6969361],[21.4164113,39.6919579],[21.3799705,39.6969361],[21.3873233,39.7044892],[21.3932373,39.7092957],[21.4053841,39.7183938],[21.4112974,39.7240586],[21.4119366,39.7374482],[21.4114572,39.7444863],[21.4101787,39.7530694],[21.4135348,39.7544426],[21.4143338,39.7630257],[21.4146534,39.7678322],[21.416731,39.774012],[21.4205663,39.7784752]] 
@@ -113,7 +116,6 @@
             name: "الوردية الرابعة", color: "#007cf5", msg: "نطاق تنظيمي خاص: يرجى الالتزام بالمسارات المحددة لضمان انسيابية الحركة.",
             coords: [[21.3768231,39.6915736],[21.3429272,39.7071064],[21.3434134,39.7106172],[21.3435298,39.7114535],[21.3434756,39.7128731],[21.3425379,39.7263627],[21.3424377,39.7341783],[21.3425794,39.7417194],[21.3427933,39.7456146],[21.3430165,39.7476955],[21.3437566,39.7526972],[21.3439753,39.7561032],[21.3443700,39.7608616],[21.3452364,39.7668436],[21.3455672,39.7677304],[21.3477767,39.7736598],[21.3494679,39.7755813],[21.3545090,39.7738075],[21.3741795,39.7658747],[21.3798482,39.7645530],[21.3942631,39.7620645],[21.3996377,39.7611926],[21.4036783,39.7587149],[21.4094647,39.7547994],[21.4101935,39.7517526],[21.4114849,39.7433814],[21.4117082,39.7392697],[21.4117093,39.7353041],[21.4116063,39.7340390],[21.4115296,39.7317470],[21.4114596,39.7305534],[21.4113608,39.7279882],[21.4112776,39.7257227],[21.4112293,39.7244106],[21.4112254,39.7240175],[21.3849936,39.7023201],[21.3798798,39.6968708],[21.3768231,39.6915736]] 
         },
-        // 3. النطاق الأحمر (مخالفات فورية) - قوي جداً
         {
             name: "النطاق الاحمر (مخالفات فورية)", color: "#ff0000",
             msg: "مخالفة فورية! أنت داخل النطاق الأحمر المحظور، غادر فوراً وتجنب هذا المسار.",
@@ -124,12 +126,10 @@
                 [21.30885857533626, 40.04117083514495], [21.51577097414043, 39.89780394502168]
             ]
         },
-        // 4. إسكان قوى الأمن
         { 
             name: "إسكان قوى الأمن", color: "#007cf5", msg: "أنت الآن داخل نطاق إسكان قوى الأمن. يرجى الالتزام بالتعليمات المحددة.",
             coords: [ [21.62277792148566, 39.20608824874515], [21.62018705577081, 39.19657295896057], [21.61139727513645, 39.1993972627275], [21.61414230975821, 39.20861967620993], [21.62277792148566, 39.20608824874515] ] 
         },
-        // 5. النطاق الخطر (الأصغر والأخطر محلياً)
         { 
             name: "النطاق الخطر", color: "#ff0000", msg: "أنت الآن داخل النطاق الخطر! أخذ أقصى درجات الحيطة والحذر وتقليل السرعة فوراً.",
             coords: [
@@ -160,7 +160,6 @@
         }
     ];
 
-    // توجيه الخريطة لمدينة مكة المكرمة كمركز أساسي لرؤية النطاقين الأصفر والأحمر
     var map = L.map('map', { zoomControl: false, attributionControl: false }).setView([21.4, 39.8], 10);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
 
@@ -171,7 +170,7 @@
             fillOp = 0.25; 
             borderWeight = 3;
         } else if (z.name === "النطاق الخارجي الأصفر") {
-            fillOp = 0.08; // شفاف جداً لأنه كبير
+            fillOp = 0.08; 
         }
         L.polygon(z.coords, { color: z.color, fillOpacity: fillOp, weight: borderWeight }).addTo(map).bindPopup(z.name);
     });
@@ -182,11 +181,10 @@
     let destinationMarker = null;
     let lastZoneName = null;
     let wakeLock = null;
+    let routingControl = null;
 
     function playAlertSound(isCritical = false) {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        
-        // صوت قوي للمناطق الحرجة
         if (isCritical) {
             for(let i=0; i<3; i++) {
                 setTimeout(() => {
@@ -241,7 +239,6 @@
         }, null, { enableHighAccuracy: true });
     };
 
-    // الملاحة وتفادي المضلعات
     document.getElementById('btn-nav').onclick = function() {
         if (!window.userMarker) {
             alert("يرجى تفعيل التتبع أولاً لتحديد نقطة انطلاقك!");
@@ -260,18 +257,34 @@
         document.getElementById('nav-hint').style.display = 'none';
         navMode = false;
         
-        if (window.navLine) map.removeLayer(window.navLine);
+        // إزالة مسار الطرق القديم إن وجد
+        if (routingControl) {
+            map.removeControl(routingControl);
+        }
         
-        // حساب المسار الآمن بالابتعاد عن المناطق
+        // 1. استخدام الخوارزمية الجغرافية لاكتشاف وتحديد نقاط الالتفاف (Waypoints) خارج المضلعات المحظورة
         let safeRoutePoints = getSafeRoute(window.userMarker.getLatLng(), e.latlng);
-        window.navLine = L.polyline(safeRoutePoints, { color: '#00ff88', dashArray: '10, 10', weight: 4 }).addTo(map);
+        
+        // 2. إرسال النقاط الآمنة لمحرك OSRM ليرسم المسار المتعرج على الشوارع الحقيقية بين هذه النقاط
+        routingControl = L.Routing.control({
+            waypoints: safeRoutePoints,
+            router: L.Routing.osrmv1({
+                serviceUrl: 'https://router.project-osrm.org/route/v1' // محرك التوجيه المجاني
+            }),
+            lineOptions: {
+                styles: [{color: '#00ff88', opacity: 0.8, weight: 6, dashArray: '10, 10'}]
+            },
+            createMarker: function() { return null; }, // إخفاء العلامات الافتراضية للمكتبة
+            show: false, // إخفاء لوحة التوجيه النصية
+            addWaypoints: false // منع المستخدم من سحب الخط
+        }).addTo(map);
         
         if (safeRoutePoints.length > 2) {
-            showLegalAlert("✅ تم تعديل مسارك برمجياً لتفادي المناطق المحظورة والمخالفات الفورية، اتبع الخط الأخضر المتقطع.", "#00b894", false);
+            showLegalAlert("✅ تم تعديل مسارك برمجياً لتفادي المناطق المحظورة، سيتم الآن رسم المسار عبر شبكة الطرق الآمنة.", "#00b894", false);
         }
     });
 
-    // خوارزمية جغرافية مبسطة للابتعاد عن المضلعات
+    // خوارزمية جغرافية لإيجاد نقاط آمنة تتجاوز المضلعات (تقوم بتوليد Waypoints لمحرك OSRM)
     function getSafeRoute(start, end, depth = 0) {
         if (depth > 5) return [start, end];
 
@@ -286,13 +299,15 @@
             }
             let poly = turf.polygon([coords]);
 
+            // إذا كان الخط المباشر يقطع أي منطقة محظورة
             if (turf.booleanIntersects(line, poly)) {
                 let center = turf.centroid(poly);
                 let midpoint = turf.midpoint(startPt, endPt);
                 
                 let bearing = turf.bearing(center, midpoint);
-                // الالتفاف بمسافة أبعد (4 كم) للمناطق الكبيرة لضمان تفاديها
-                let detourPt = turf.destination(center, 4, bearing, {units: 'kilometers'});
+                // رفعنا مسافة الالتفاف إلى 6 كم لضمان إخراج نقطة الـ Waypoint خارج النطاق الكبير 
+                // ليقوم محرك الطرق باختيار شوارع لا تقطع المنطقة
+                let detourPt = turf.destination(center, 6, bearing, {units: 'kilometers'});
                 let detourLatLng = L.latLng(detourPt.geometry.coordinates[1], detourPt.geometry.coordinates[0]);
 
                 let part1 = getSafeRoute(start, detourLatLng, depth + 1);
