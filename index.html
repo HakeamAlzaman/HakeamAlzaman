@@ -39,10 +39,9 @@
         @keyframes slideUp { from { transform: translate(-50%, -20%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
         
         .alert-icon { font-size: 55px; margin-bottom: 10px; display: block; }
-        .legal-msg { font-size: 18px; line-height: 1.6; margin: 15px 0; font-weight: 500; }
+        .legal-msg { font-size: 16px; line-height: 1.6; margin: 15px 0; font-weight: 500; white-space: pre-wrap; }
         .close-btn { background: white; color: #000; padding: 12px 40px; border-radius: 25px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; }
 
-        /* تأثير الوميض المرعب للنطاق الأحمر */
         @keyframes flashRed {
             0% { box-shadow: 0 0 20px #ff0000; }
             50% { box-shadow: 0 0 80px #ff0000, inset 0 0 30px #ff0000; }
@@ -50,9 +49,9 @@
         }
         .critical-alert { animation: flashRed 1s infinite !important; border-width: 4px !important; }
 
-        #nav-hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #3498db; padding: 10px 20px; border-radius: 30px; z-index: 1001; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-weight: bold; }
+        #nav-hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #3498db; padding: 10px 20px; border-radius: 30px; z-index: 1001; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-weight: bold; text-align: center; }
 
-        /* إخفاء واجهة التوجيه النصية الخاصة بالمكتبة (لأننا نحتاج المسار على الخريطة فقط) */
+        /* إخفاء الواجهة النصية الجانبية لمكتبة المسارات لتنظيف الشاشة */
         .leaflet-routing-container { display: none !important; }
     </style>
 </head>
@@ -67,24 +66,25 @@
     </div>
     <div class="controls">
         <button id="btn-start" class="btn">📡 تفعيل التتبع</button>
-        <button id="btn-nav" class="btn">📍 مسار على الطريق</button>
+        <button id="btn-nav" class="btn">📍 ملاحة الطرق المتقدمة</button>
         <button id="btn-save" class="btn">💾 حفظ المسار KML</button>
     </div>
 </div>
 
-<div id="nav-hint">قم بالنقر على الخريطة لتحديد وجهتك...</div>
+<div id="nav-hint">انقر على الخريطة لتحديد الوجهة<br><small>بعد رسم المسار، يمكنك سحب الخط الأزرق لتجنب المناطق المحظورة</small></div>
 
 <div id="backdrop"></div>
 <div id="legal-modal" class="legal-alert">
     <span class="alert-icon" id="alert-icon-display">⚠️</span>
     <h3 id="alert-title" style="font-size: 24px; color: #fff; margin-bottom: 5px;">تنبيه تنظيمي</h3>
     <p id="legal-text" class="legal-msg"></p>
-    <button class="close-btn" onclick="closeAlert()">علم، سألتزم</button>
+    <button class="close-btn" onclick="closeAlert()">حسناً</button>
 </div>
 
 <div id="map-container"><div id="map"></div></div>
 
 <script>
+    // المناطق الجغرافية مرتبة من الأكبر إلى الأصغر
     const zonesData = [
         {
             name: "النطاق الخارجي الأصفر", color: "#FFD700", 
@@ -118,7 +118,7 @@
         },
         {
             name: "النطاق الاحمر (مخالفات فورية)", color: "#ff0000",
-            msg: "مخالفة فورية! أنت داخل النطاق الأحمر المحظور، غادر فوراً وتجنب هذا المسار.",
+            msg: "مخالفة فورية! أنت أو مسارك المقترح يمر من النطاق الأحمر المحظور.\n\nتجنب هذا المسار فوراً.",
             coords: [
                 [21.51577097414043, 39.89780394502168], [21.53261348485238, 39.75571187580298], [21.47325831732579, 39.67469554471128], 
                 [21.41150094976036, 39.67713892574493], [21.36341468151538, 39.67191190533878], [21.32730259062046, 39.66748383181117], 
@@ -178,10 +178,9 @@
     let pathCoords = [];
     let pathLine = L.polyline([], { color: '#ff4757', weight: 4 }).addTo(map);
     let navMode = false;
+    let routingControl = null;
     let destinationMarker = null;
     let lastZoneName = null;
-    let wakeLock = null;
-    let routingControl = null;
 
     function playAlertSound(isCritical = false) {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -218,8 +217,6 @@
         document.getElementById('btn-save').style.display = 'block';
         document.getElementById('gps-status').style.color = '#00ff88';
 
-        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(lock => wakeLock = lock);
-
         navigator.geolocation.watchPosition(pos => {
             const { latitude, longitude, speed, heading } = pos.coords;
             const kmh = speed ? (speed * 3.6).toFixed(1) : 0;
@@ -229,178 +226,72 @@
             
             const currentPos = [latitude, longitude];
             pathCoords.push(currentPos);
+            
+            // رسم خط مسار تتبع السائق الفعلي (خط أحمر رفيع)
             pathLine.setLatLngs(pathCoords);
             
             if (window.userMarker) map.removeLayer(window.userMarker);
-            window.userMarker = L.circleMarker(currentPos, { radius: 10, color: '#fff', fillColor: '#0078ff', fillOpacity: 1 }).addTo(map);
+            window.userMarker = L.circleMarker(currentPos, { radius: 10, color: '#fff', fillColor: '#0078ff', fillOpacity: 1, zIndexOffset: 1000 }).addTo(map);
             
-            if (!navMode) map.setView(currentPos, 15);
+            if (!navMode && !routingControl) map.setView(currentPos, 15);
             checkZones(latitude, longitude);
         }, null, { enableHighAccuracy: true });
     };
 
     document.getElementById('btn-nav').onclick = function() {
-        if (!window.userMarker) {
-            alert("يرجى تفعيل التتبع أولاً لتحديد نقطة انطلاقك!");
-            return;
-        }
+        if (!window.userMarker) return alert("يرجى تفعيل التتبع أولاً لتحديد نقطة انطلاقك!");
         navMode = true;
         document.getElementById('nav-hint').style.display = 'block';
     };
 
+    // نظام الملاحة التفاعلي على الطرقات
     map.on('click', function(e) {
         if (!navMode) return;
-        
-        if (destinationMarker) map.removeLayer(destinationMarker);
-        destinationMarker = L.marker(e.latlng).addTo(map).bindPopup("وجهتك").openPopup();
         
         document.getElementById('nav-hint').style.display = 'none';
         navMode = false;
         
-        // إزالة مسار الطرق القديم إن وجد
-        if (routingControl) {
-            map.removeControl(routingControl);
-        }
+        if (routingControl) map.removeControl(routingControl);
         
-        // 1. استخدام الخوارزمية الجغرافية لاكتشاف وتحديد نقاط الالتفاف (Waypoints) خارج المضلعات المحظورة
-        let safeRoutePoints = getSafeRoute(window.userMarker.getLatLng(), e.latlng);
-        
-        // 2. إرسال النقاط الآمنة لمحرك OSRM ليرسم المسار المتعرج على الشوارع الحقيقية بين هذه النقاط
+        // تشغيل نظام الملاحة الحقيقي على شبكة الطرق
         routingControl = L.Routing.control({
-            waypoints: safeRoutePoints,
-            router: L.Routing.osrmv1({
-                serviceUrl: 'https://router.project-osrm.org/route/v1' // محرك التوجيه المجاني
-            }),
+            waypoints: [
+                window.userMarker.getLatLng(),
+                e.latlng
+            ],
+            routeWhileDragging: true, // تحديث المسار فوراً أثناء سحب المستخدم للخط
             lineOptions: {
-                styles: [{color: '#00ff88', opacity: 0.8, weight: 6, dashArray: '10, 10'}]
+                styles: [{color: '#0078ff', opacity: 0.9, weight: 6}] // خط أزرق سميك كخرائط جوجل
             },
-            createMarker: function() { return null; }, // إخفاء العلامات الافتراضية للمكتبة
-            show: false, // إخفاء لوحة التوجيه النصية
-            addWaypoints: false // منع المستخدم من سحب الخط
-        }).addTo(map);
-        
-        if (safeRoutePoints.length > 2) {
-            showLegalAlert("✅ تم تعديل مسارك برمجياً لتفادي المناطق المحظورة، سيتم الآن رسم المسار عبر شبكة الطرق الآمنة.", "#00b894", false);
-        }
-    });
-
-    // خوارزمية جغرافية لإيجاد نقاط آمنة تتجاوز المضلعات (تقوم بتوليد Waypoints لمحرك OSRM)
-    function getSafeRoute(start, end, depth = 0) {
-        if (depth > 5) return [start, end];
-
-        let startPt = turf.point([start.lng, start.lat]);
-        let endPt = turf.point([end.lng, end.lat]);
-        let line = turf.lineString([startPt.geometry.coordinates, endPt.geometry.coordinates]);
-
-        for (let i = 0; i < zonesData.length; i++) {
-            let coords = zonesData[i].coords.map(c => [c[1], c[0]]);
-            if (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1]) {
-                coords.push(coords[0]);
-            }
-            let poly = turf.polygon([coords]);
-
-            // إذا كان الخط المباشر يقطع أي منطقة محظورة
-            if (turf.booleanIntersects(line, poly)) {
-                let center = turf.centroid(poly);
-                let midpoint = turf.midpoint(startPt, endPt);
-                
-                let bearing = turf.bearing(center, midpoint);
-                // رفعنا مسافة الالتفاف إلى 6 كم لضمان إخراج نقطة الـ Waypoint خارج النطاق الكبير 
-                // ليقوم محرك الطرق باختيار شوارع لا تقطع المنطقة
-                let detourPt = turf.destination(center, 6, bearing, {units: 'kilometers'});
-                let detourLatLng = L.latLng(detourPt.geometry.coordinates[1], detourPt.geometry.coordinates[0]);
-
-                let part1 = getSafeRoute(start, detourLatLng, depth + 1);
-                let part2 = getSafeRoute(detourLatLng, end, depth + 1);
-                
-                part2.shift();
-                return part1.concat(part2);
-            }
-        }
-        return [start, end];
-    }
-
-    function checkZones(lat, lng) {
-        let foundZone = null;
-        zonesData.forEach(z => {
-            if (isPointInPoly(lat, lng, z.coords)) foundZone = z;
-        });
-
-        const label = document.getElementById('zone-check');
-        const alertIcon = document.getElementById('alert-icon-display');
-        const modal = document.getElementById('legal-modal');
-
-        if (foundZone) {
-            label.textContent = foundZone.name;
-            label.style.color = foundZone.color;
-            
-            if (lastZoneName !== foundZone.name) {
-                lastZoneName = foundZone.name;
-                
-                let isCritical = (foundZone.name === "النطاق الخطر" || foundZone.name === "النطاق الاحمر (مخالفات فورية)");
-                playAlertSound(isCritical);
-                
-                if (isCritical) {
-                    alertIcon.textContent = "🚨";
-                    modal.classList.add('critical-alert');
-                    document.getElementById('alert-title').textContent = "تحذير أمني عالي";
-                    document.getElementById('alert-title').style.color = "#ff0000";
-                } else {
-                    alertIcon.textContent = "⚠️";
-                    modal.classList.remove('critical-alert');
-                    document.getElementById('alert-title').textContent = "تنبيه تنظيمي";
-                    document.getElementById('alert-title').style.color = "#fff";
+            show: false, // إخفاء الواجهة النصية
+            language: 'ar',
+            createMarker: function(i, wp, nWps) {
+                if (i === nWps - 1) { // علامة للوجهة فقط
+                    return L.marker(wp.latLng).bindPopup("وجهتك");
                 }
-                
-                showLegalAlert(foundZone.msg, foundZone.color, isCritical);
+                return null;
             }
-        } else {
-            label.textContent = "منطقة آمنة";
-            label.style.color = "#00b894";
-            lastZoneName = null;
-        }
-    }
+        }).addTo(map);
 
-    function isPointInPoly(lat, lng, poly) {
-        let inside = false;
-        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-            let xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
-            if (((yi > lng) != (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi)) inside = !inside;
-        }
-        return inside;
-    }
+        // مراقبة المسار الجديد المتولد من محرك الطرق
+        routingControl.on('routesfound', function(e) {
+            let route = e.routes[0];
+            let coords = route.coordinates.map(c => [c.lng, c.lat]);
+            let routeLine = turf.lineString(coords); // تحويل مسار الطريق إلى خط قابل للفحص
 
-    function showLegalAlert(text, color, isCritical) {
-        document.getElementById('backdrop').style.display = 'block';
-        const modal = document.getElementById('legal-modal');
-        modal.style.display = 'block';
-        
-        if(isCritical) {
-            modal.style.borderColor = '#ff0000';
-            modal.style.background = `linear-gradient(135deg, rgba(255,0,0,0.3) 0%, rgba(16,16,30,0.95) 100%)`;
-        } else {
-            modal.style.borderColor = color;
-            modal.style.background = `linear-gradient(135deg, ${color}33 0%, rgba(16,16,30,0.95) 100%)`;
-        }
-        
-        document.getElementById('legal-text').textContent = text;
-    }
+            let intersectedZone = null;
+            let isCritical = false;
 
-    function closeAlert() {
-        document.getElementById('backdrop').style.display = 'none';
-        const modal = document.getElementById('legal-modal');
-        modal.style.display = 'none';
-        modal.classList.remove('critical-alert');
-    }
+            // التحقق مما إذا كان "مسار الطريق" يخترق أي منطقة محظورة
+            for (let i = 0; i < zonesData.length; i++) {
+                let zone = zonesData[i];
+                // تجاهل النطاق الأصفر الخارجي في فحص الملاحة لأنه يغطي كامل مكة
+                if (zone.name === "النطاق الخارجي الأصفر") continue; 
 
-    document.getElementById('btn-save').onclick = function() {
-        let coords = pathCoords.map(p => `${p[1]},${p[0]},0`).join(' ');
-        let kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><name>مساري</name><LineString><coordinates>${coords}</coordinates></LineString></Placemark></Document></kml>`;
-        let blob = new Blob([kml], {type: "application/vnd.google-earth.kml+xml"});
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement('a');
-        a.href = url; a.download = "MyTrack.kml"; a.click();
-    };
-</script>
-</body>
-</html>
+                let polyCoords = zone.coords.map(c => [c[1], c[0]]);
+                if (polyCoords[0][0] !== polyCoords[polyCoords.length-1][0] || polyCoords[0][1] !== polyCoords[polyCoords.length-1][1]) {
+                    polyCoords.push(polyCoords[0]);
+                }
+                let poly = turf.polygon([polyCoords]);
+
+                // الخ
