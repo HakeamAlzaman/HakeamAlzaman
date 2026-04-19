@@ -21,7 +21,7 @@
         .controls { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
         .btn { border: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,184,148,0.3); }
         #btn-start { background: linear-gradient(135deg, #00b894 0%, #00a085 100%); color: white; }
-        .btn:disabled { background: #444; cursor: not-allowed; box-shadow: none; }
+        .btn:disabled { background: #00b894; cursor: not-allowed; box-shadow: none; opacity: 0.9; }
 
         #map-container { position: absolute; top: 120px; left: 0; right: 0; bottom: 0; z-index: 1; }
         #map { height: 100%; width: 100%; background: #1a1a2e; }
@@ -41,6 +41,15 @@
             100% { box-shadow: 0 0 20px #ff0000; }
         }
         .critical-alert { animation: flashRed 1s infinite !important; border-width: 4px !important; }
+
+        /* إصلاح كود أيقونة السيارة لتعمل على جميع المتصفحات */
+        .custom-car-icon {
+            background: transparent !important;
+            border: none !important;
+        }
+        .custom-car-icon svg {
+            filter: drop-shadow(0px 5px 8px rgba(0,0,0,0.8)); /* ظل لبروز السيارة على الخريطة */
+        }
     </style>
 </head>
 <body>
@@ -52,7 +61,7 @@
         <div class="stat-box"><span class="stat-label">📡 الحالة</span><span id="gps-status" class="stat-value" style="color:#ff4757">غير مفعل</span></div>
     </div>
     <div class="controls">
-        <button id="btn-start" class="btn">📡 تفعيل نظام الخرائط</button>
+        <button id="btn-start" class="btn">📡 تفعيل تحديد الموقع</button>
     </div>
 </div>
 
@@ -157,11 +166,12 @@
         L.polygon(z.coords, { color: z.color, fillOpacity: fillOp, weight: borderWeight }).addTo(map).bindPopup(z.name);
     });
 
-    // دالة لتوليد أيقونة سيارة بلون مخصص باستخدام Base64
+    // رسم أيقونة سيارة بأمان عن طريق إضافة كود الـ HTML المباشر للـ SVG وتمرير اللون المطلوب
     function getCarIcon(colorCode) {
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="${colorCode}" stroke="#ffffff" stroke-width="15" d="M499.99 176h-59.87l-16.64-41.6C406.38 91.63 365.57 64 319.5 64h-127c-46.06 0-86.88 27.63-103.99 70.4L71.87 176H12.01C4.2 176-1.53 183.34.37 190.91l6 24C7.7 220.25 12.5 224 18.01 224h20.07C24.65 235.73 16 252.78 16 272v48c0 16.12 6.16 30.67 16 41.93V416c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h256v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-54.07c9.84-11.25 16-25.8 16-41.93v-48c0-19.22-8.65-36.27-22.07-48H494c5.51 0 10.31-3.75 11.64-9.09l6-24c1.89-7.57-3.84-14.91-11.65-14.91zM119.2 148.8C127.75 127.41 148.16 112 171.5 112h169c23.34 0 43.75 15.41 52.3 36.8l17.6 44H101.6l17.6-44zM96 352c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm320 0c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z"/></svg>`;
-        return L.icon({
-            iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 45px; height: 45px; filter: drop-shadow(0px 4px 6px rgba(0,0,0,0.6));"><path fill="${colorCode}" stroke="#ffffff" stroke-width="15" d="M499.99 176h-59.87l-16.64-41.6C406.38 91.63 365.57 64 319.5 64h-127c-46.06 0-86.88 27.63-103.99 70.4L71.87 176H12.01C4.2 176-1.53 183.34.37 190.91l6 24C7.7 220.25 12.5 224 18.01 224h20.07C24.65 235.73 16 252.78 16 272v48c0 16.12 6.16 30.67 16 41.93V416c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h256v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-54.07c9.84-11.25 16-25.8 16-41.93v-48c0-19.22-8.65-36.27-22.07-48H494c5.51 0 10.31-3.75 11.64-9.09l6-24c1.89-7.57-3.84-14.91-11.65-14.91zM119.2 148.8C127.75 127.41 148.16 112 171.5 112h169c23.34 0 43.75 15.41 52.3 36.8l17.6 44H101.6l17.6-44zM96 352c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm320 0c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z"/></svg>`;
+        return L.divIcon({
+            className: 'custom-car-icon',
+            html: svg,
             iconSize: [45, 45],
             iconAnchor: [22, 22]
         });
@@ -172,50 +182,61 @@
     let lastAlertLocation = null;
     let watchId = null;
 
+    // تشغيل الأصوات
     function playAlertSound(isCritical = false) {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (isCritical) {
-            for(let i=0; i<3; i++) {
-                setTimeout(() => {
-                    let osc = audioCtx.createOscillator();
-                    let gainNode = audioCtx.createGain();
-                    osc.connect(gainNode);
-                    gainNode.connect(audioCtx.destination);
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                    gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                    osc.start();
-                    osc.stop(audioCtx.currentTime + 0.15);
-                }, i * 200);
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (isCritical) {
+                for(let i=0; i<3; i++) {
+                    setTimeout(() => {
+                        let osc = audioCtx.createOscillator();
+                        let gainNode = audioCtx.createGain();
+                        osc.connect(gainNode);
+                        gainNode.connect(audioCtx.destination);
+                        osc.type = 'sawtooth';
+                        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                        osc.start();
+                        osc.stop(audioCtx.currentTime + 0.15);
+                    }, i * 200);
+                }
+            } else {
+                let osc = audioCtx.createOscillator();
+                let gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
             }
-        } else {
-            let osc = audioCtx.createOscillator();
-            let gainNode = audioCtx.createGain();
-            osc.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            osc.type = 'square';
-            osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            osc.start();
-            osc.stop(audioCtx.currentTime + 0.2);
-        }
+        } catch(e) {}
     }
 
     document.getElementById('btn-start').onclick = function() {
-        if (!navigator.geolocation) return alert("GPS غير مدعوم في جهازك");
+        if (!navigator.geolocation) {
+            alert("GPS غير مدعوم في جهازك أو متصفحك");
+            return;
+        }
         
-        this.disabled = true;
-        this.textContent = "جاري تحديد الموقع...";
-        
-        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(lock => wakeLock = lock).catch(()=>{});
+        const btn = this;
+        btn.disabled = true;
+        btn.textContent = "جاري تحديد الموقع...";
+        document.getElementById('gps-status').textContent = "جاري البحث";
+        document.getElementById('gps-status').style.color = '#FFD700';
+
+        if ('wakeLock' in navigator) {
+            navigator.wakeLock.request('screen').then(lock => wakeLock = lock).catch(()=>{});
+        }
 
         const geoOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
 
-        // دالة معالجة الأخطاء
+        // دالة لمعالجة أخطاء الموقع
         const handleError = (err) => {
             console.warn(`ERROR(${err.code}): ${err.message}`);
-            this.disabled = false;
-            this.textContent = "📡 تفعيل نظام الخرائط";
+            btn.disabled = false;
+            btn.textContent = "📡 تفعيل نظام الخرائط";
             document.getElementById('gps-status').textContent = "فشل التحديد";
             document.getElementById('gps-status').style.color = '#ff4757';
             
@@ -223,14 +244,14 @@
             else alert("تعذر تحديد الموقع. يرجى التأكد من تفعيل الـ GPS والمحاولة مجدداً.");
         };
 
-        // طلب موقع فوري لسرعة الاستجابة
+        // طلب استدعاء سريع للموقع لضمان ظهور السيارة فوراً بدون تعليق
         navigator.geolocation.getCurrentPosition((pos) => {
-            this.textContent = "مفعل";
+            btn.textContent = "مفعل";
             document.getElementById('gps-status').textContent = "متصل";
             document.getElementById('gps-status').style.color = '#00ff88';
             updatePosition(pos);
             
-            // بدء التتبع المستمر بعد نجاح التحديد الأول
+            // بدء التتبع المستمر للتحرك
             if(watchId) navigator.geolocation.clearWatch(watchId);
             watchId = navigator.geolocation.watchPosition(updatePosition, handleError, geoOptions);
         }, handleError, geoOptions);
@@ -245,9 +266,10 @@
         
         const currentPos = [latitude, longitude];
         
+        // رسم السيارة وتغيير موقعها
         if (!window.userMarker) {
             window.userMarker = L.marker(currentPos, { icon: getCarIcon('#00ff88'), zIndexOffset: 1000 }).addTo(map);
-            map.setView(currentPos, 15);
+            map.setView(currentPos, 16); // تكبير مقرب عند أول تشغيل
         } else {
             window.userMarker.setLatLng(currentPos);
             map.setView(currentPos, map.getZoom()); 
@@ -268,6 +290,7 @@
         const alertIcon = document.getElementById('alert-icon-display');
         const modal = document.getElementById('legal-modal');
 
+        // تحديث لون السيارة مباشرة
         let carColor = foundZone ? foundZone.color : '#00ff88'; 
         if (window.userMarker) {
             window.userMarker.setIcon(getCarIcon(carColor));
@@ -282,6 +305,7 @@
             if (lastAlertZoneName !== foundZone.name) {
                 shouldShowAlert = true;
             } else if (lastAlertLocation) {
+                // خوارزمية الـ 5 كيلومتر
                 let distanceMeters = currentLatLng.distanceTo(lastAlertLocation);
                 if (distanceMeters >= 5000) {
                     shouldShowAlert = true;
