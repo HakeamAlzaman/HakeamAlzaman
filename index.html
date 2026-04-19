@@ -14,17 +14,18 @@
         
         #top-bar { position: fixed; top: 0; left: 0; right: 0; min-height: 90px; background: rgba(16, 16, 30, 0.95); border-bottom: 2px solid #00b894; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .dashboard { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .stat-box { background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 12px; border: 1px solid rgba(0,184,148,0.3); text-align: center; min-width: 120px; }
-        .stat-label { font-size: 12px; color: #aaa; display: block; margin-bottom: 5px; }
-        .stat-value { font-size: 16px; font-weight: bold; color: #fff; }
+        
+        .stat-box { background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 12px; border: 1px solid rgba(0,184,148,0.3); text-align: center; min-width: 100px; flex: 1; }
+        .stat-label { font-size: 11px; color: #aaa; display: block; margin-bottom: 5px; }
+        .stat-value { font-size: 15px; font-weight: bold; color: #fff; direction: ltr; display: inline-block; }
 
         .controls { display: flex; gap: 10px; margin-top: 10px; justify-content: center; flex-wrap: wrap; }
-        .btn { border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .btn { border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         #btn-start { background: linear-gradient(135deg, #00b894 0%, #00a085 100%); color: white; }
         #btn-settings { background: #34495e; color: white; border: 1px solid #576574; }
         .btn:disabled { background: #00b894; cursor: not-allowed; box-shadow: none; opacity: 0.9; }
 
-        #map-container { position: absolute; top: 120px; left: 0; right: 0; bottom: 0; z-index: 1; }
+        #map-container { position: absolute; top: 135px; left: 0; right: 0; bottom: 0; z-index: 1; }
         #map { height: 100%; width: 100%; background: #1a1a2e; }
 
         /* نافذة التنبيهات والمودال */
@@ -52,14 +53,21 @@
         .zone-option input[type="checkbox"] { transform: scale(1.3); cursor: pointer; accent-color: #00b894; }
         .zone-color-box { width: 16px; height: 16px; border-radius: 4px; display: inline-block; border: 1px solid rgba(255,255,255,0.5); }
         .save-settings-btn { background: #00b894; color: white; border: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+
+        /* كلاس الأيقونة النقي بدون أي تدخلات خارجية */
+        .pure-html-marker {
+            background: transparent;
+            border: none;
+        }
     </style>
 </head>
 <body>
 
 <div id="top-bar">
     <div class="dashboard">
-        <div class="stat-box"><span class="stat-label">🚀 السرعة</span><span id="speed" class="stat-value">0</span><small>كم/س</small></div>
-        <div class="stat-box"><span class="stat-label">🎯 المنطقة الحالية</span><span id="zone-check" class="stat-value" style="color:#00ff88">منطقة آمنة</span></div>
+        <div class="stat-box"><span class="stat-label">🚀 السرعة</span><span id="speed" class="stat-value">0</span><span style="font-size:10px;">كم/س</span></div>
+        <div class="stat-box"><span class="stat-label">📍 الموقع</span><span id="coords-display" class="stat-value" style="font-size: 12px; color:#aaa;">جاري البحث...</span></div>
+        <div class="stat-box"><span class="stat-label">🎯 المنطقة</span><span id="zone-check" class="stat-value" style="color:#00ff88">منطقة آمنة</span></div>
         <div class="stat-box"><span class="stat-label">📡 الحالة</span><span id="gps-status" class="stat-value" style="color:#ff4757">غير متصل</span></div>
     </div>
     <div class="controls">
@@ -119,10 +127,6 @@
             name: "الوردية الرابعة", color: "#F57C00", msg: "نطاق تنظيمي خاص: يرجى الالتزام بالمسارات المحددة.",
             coords: [[21.3768231,39.6915736],[21.3429272,39.7071064],[21.3434134,39.7106172],[21.3435298,39.7114535],[21.3434756,39.7128731],[21.3425379,39.7263627],[21.3424377,39.7341783],[21.3425794,39.7417194],[21.3427933,39.7456146],[21.3430165,39.7476955],[21.3437566,39.7526972],[21.3439753,39.7561032],[21.3443700,39.7608616],[21.3452364,39.7668436],[21.3455672,39.7677304],[21.3477767,39.7736598],[21.3494679,39.7755813],[21.3545090,39.7738075],[21.3741795,39.7658747],[21.3798482,39.7645530],[21.3942631,39.7620645],[21.3996377,39.7611926],[21.4036783,39.7587149],[21.4094647,39.7547994],[21.4101935,39.7517526],[21.4114849,39.7433814],[21.4117082,39.7392697],[21.4117093,39.7353041],[21.4116063,39.7340390],[21.4115296,39.7317470],[21.4114596,39.7305534],[21.4113608,39.7279882],[21.4112776,39.7257227],[21.4112293,39.7244106],[21.4112254,39.7240175],[21.3849936,39.7023201],[21.3798798,39.6968708],[21.3768231,39.6915736]] 
         },
-        { 
-            name: "إسكان قوى الأمن", color: "#F57C00", msg: "أنت الآن داخل نطاق إسكان قوى الأمن. يرجى الالتزام بالتعليمات.",
-            coords: [ [21.62277792148566, 39.20608824874515], [21.62018705577081, 39.19657295896057], [21.61139727513645, 39.1993972627275], [21.61414230975821, 39.20861967620993], [21.62277792148566, 39.20608824874515] ] 
-        },
         {
             name: "النطاق الاحمر (مخالفات فورية)", color: "#ff0000",
             msg: "مخالفة فورية! أنت داخل النطاق الأحمر المحظور، غادر فوراً.",
@@ -132,6 +136,10 @@
                 [21.28948613151358, 39.77330118006482], [21.27334085400369, 39.91045171649711], [21.28806702414635, 40.01243928181768], 
                 [21.30885857533626, 40.04117083514495], [21.51577097414043, 39.89780394502168]
             ]
+        },
+        { 
+            name: "إسكان قوى الأمن", color: "#F57C00", msg: "أنت الآن داخل نطاق إسكان قوى الأمن. يرجى الالتزام بالتعليمات.",
+            coords: [ [21.62277792148566, 39.20608824874515], [21.62018705577081, 39.19657295896057], [21.61139727513645, 39.1993972627275], [21.61414230975821, 39.20861967620993], [21.62277792148566, 39.20608824874515] ] 
         },
         { 
             name: "النطاق الخطر", color: "#ff0000", msg: "أنت الآن داخل النطاق الخطر! أخذ أقصى درجات الحيطة وتقليل السرعة فوراً.",
@@ -166,13 +174,13 @@
     // قائمة بأسماء المناطق المفعّلة حالياً (الافتراضي: الكل مفعل)
     let activeZones = masterZonesData.map(z => z.name);
     
-    // طبقة لاحتواء المضلعات حتى نتمكن من مسحها ورسمها مجدداً
+    // طبقة لاحتواء المضلعات
     let polygonsLayer = L.layerGroup();
     let map = L.map('map', { zoomControl: false, attributionControl: false }).setView([21.4, 39.8], 10);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
     polygonsLayer.addTo(map);
 
-    // دالة رسم المناطق المفعلة فقط على الخريطة
+    // دالة رسم المناطق المفعلة فقط
     function renderZones() {
         polygonsLayer.clearLayers();
         masterZonesData.forEach(z => {
@@ -190,10 +198,9 @@
         });
     }
     
-    // استدعاء الرسم عند بداية فتح الصفحة
     renderZones();
 
-    // تهيئة قائمة الاختيارات في المودال الخاص بالإعدادات
+    // إعدادات المناطق
     function initSettingsModal() {
         const container = document.getElementById('zones-list-container');
         container.innerHTML = '';
@@ -217,21 +224,29 @@
 
     function saveSettings() {
         const checkboxes = document.querySelectorAll('#zones-list-container input[type="checkbox"]');
-        activeZones = []; // مسح المصفوفة لإعادة تعبئتها بالمختار فقط
+        activeZones = []; 
         checkboxes.forEach(cb => {
             if (cb.checked) activeZones.push(cb.value);
         });
         
-        // إعادة رسم الخريطة وإغلاق المودال
         renderZones();
         document.getElementById('backdrop').style.display = 'none';
         document.getElementById('settings-modal').style.display = 'none';
         
-        // إعادة فحص موقع المستخدم فوراً ليعكس الإعدادات الجديدة إذا كان التتبع مفعلاً
         if (window.userMarker) {
             let latlng = window.userMarker.getLatLng();
             checkZones(latlng.lat, latlng.lng);
         }
+    }
+
+    // بناء أيقونة نقطة التتبع بتقنية HTML الخالصة
+    function getMarkerIcon(colorCode) {
+        return L.divIcon({
+            className: 'pure-html-marker',
+            html: `<div style="background-color: ${colorCode}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.8);"></div>`,
+            iconSize: [20, 20],
+            iconAnchor: [10, 10]
+        });
     }
 
     let wakeLock = null;
@@ -294,17 +309,22 @@
             btn.textContent = "📡 تفعيل تحديد الموقع";
             document.getElementById('gps-status').textContent = "فشل التحديد";
             document.getElementById('gps-status').style.color = '#ff4757';
+            document.getElementById('coords-display').textContent = "---";
             
             if(err.code === 1) alert("الرجاء السماح للمتصفح بالوصول إلى موقعك.");
             else alert("تعذر تحديد الموقع. يرجى التأكد من تفعيل الـ GPS والمحاولة مجدداً.");
         };
 
-        // تتبع الموقع مستمر
-        watchId = navigator.geolocation.watchPosition((pos) => {
+        // طلب موقع أولي سريع
+        navigator.geolocation.getCurrentPosition((pos) => {
             btn.textContent = "مفعل";
             document.getElementById('gps-status').textContent = "متصل";
             document.getElementById('gps-status').style.color = '#00ff88';
             updatePosition(pos);
+            
+            // التتبع المستمر
+            if(watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = navigator.geolocation.watchPosition(updatePosition, handleError, geoOptions);
         }, handleError, geoOptions);
     };
 
@@ -312,20 +332,16 @@
         const { latitude, longitude, speed, heading } = pos.coords;
         const kmh = speed ? (speed * 3.6).toFixed(1) : 0;
         
+        // تحديث البيانات على الشاشة
         document.getElementById('speed').textContent = kmh;
-        document.getElementById('heading').textContent = heading ? heading.toFixed(0) + "°" : "---";
+        document.getElementById('coords-display').textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+        document.getElementById('coords-display').style.color = '#fff';
         
         const currentPos = [latitude, longitude];
         
-        // رسم نقطة الموقع باستخدام الدائرة المدمجة (يستحيل حظرها)
+        // استخدام الأيقونة النقية
         if (!window.userMarker) {
-            window.userMarker = L.circleMarker(currentPos, {
-                radius: 10,
-                color: '#ffffff',
-                weight: 3,
-                fillColor: '#00ff88',
-                fillOpacity: 1
-            }).addTo(map);
+            window.userMarker = L.marker(currentPos, { icon: getMarkerIcon('#00ff88'), zIndexOffset: 1000 }).addTo(map);
             map.setView(currentPos, 16); 
         } else {
             window.userMarker.setLatLng(currentPos);
@@ -339,7 +355,6 @@
         let currentLatLng = L.latLng(lat, lng);
         let foundZone = null;
         
-        // 1. فحص المناطق المفعلة من الإعدادات فقط (تجاهل البقية)
         let activeZonesData = masterZonesData.filter(z => activeZones.includes(z.name));
 
         activeZonesData.forEach(z => {
@@ -350,13 +365,11 @@
         const alertIcon = document.getElementById('alert-icon-display');
         const modal = document.getElementById('legal-modal');
 
-        // 2. تحديث لون سيارة المستخدم
         let markerColor = foundZone ? foundZone.color : '#00ff88'; 
         if (window.userMarker) {
-            window.userMarker.setStyle({ fillColor: markerColor });
+            window.userMarker.setIcon(getMarkerIcon(markerColor));
         }
 
-        // 3. التنبيهات
         if (foundZone) {
             label.textContent = foundZone.name;
             label.style.color = foundZone.color;
@@ -366,7 +379,6 @@
             if (lastAlertZoneName !== foundZone.name) {
                 shouldShowAlert = true;
             } else if (lastAlertLocation) {
-                // خوارزمية الـ 5 كيلومتر
                 let distanceMeters = currentLatLng.distanceTo(lastAlertLocation);
                 if (distanceMeters >= 5000) {
                     shouldShowAlert = true;
@@ -401,7 +413,6 @@
         }
     }
 
-    // خوارزمية فحص التواجد داخل المضلع
     function isPointInPoly(lat, lng, poly) {
         let inside = false;
         for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
