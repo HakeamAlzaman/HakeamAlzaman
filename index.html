@@ -1,17 +1,12 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <title>نظام الملاحة الذكي وتفادي المناطق المحظورة</title>
+    <title>نظام المراقبة والتتبع المكاني</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
-    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -19,20 +14,19 @@
         
         #top-bar { position: fixed; top: 0; left: 0; right: 0; min-height: 90px; background: rgba(16, 16, 30, 0.95); border-bottom: 2px solid #00b894; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .dashboard { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 10px; }
-        .stat-box { background: rgba(255,255,255,0.05); padding: 5px 15px; border-radius: 12px; border: 1px solid rgba(0,184,148,0.3); text-align: center; min-width: 100px; }
-        .stat-label { font-size: 11px; color: #00b894; display: block; margin-bottom: 2px; }
+        .stat-box { background: rgba(255,255,255,0.05); padding: 8px 20px; border-radius: 12px; border: 1px solid rgba(0,184,148,0.3); text-align: center; min-width: 120px; }
+        .stat-label { font-size: 12px; color: #aaa; display: block; margin-bottom: 5px; }
         .stat-value { font-size: 16px; font-weight: bold; color: #fff; }
 
-        .controls { display: flex; gap: 8px; margin-top: 8px; justify-content: center; }
-        .btn { border: none; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 12px; transition: 0.3s; display: flex; align-items: center; gap: 5px; }
-        #btn-start { background: #00b894; color: white; }
-        #btn-nav { background: #3498db; color: white; }
-        #btn-save { background: #e67e22; color: white; display: none; }
-        .btn:disabled { background: #444; cursor: not-allowed; }
+        .controls { display: flex; gap: 10px; margin-top: 10px; justify-content: center; }
+        .btn { border: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,184,148,0.3); }
+        #btn-start { background: linear-gradient(135deg, #00b894 0%, #00a085 100%); color: white; }
+        .btn:disabled { background: #444; cursor: not-allowed; box-shadow: none; }
 
         #map-container { position: absolute; top: 120px; left: 0; right: 0; bottom: 0; z-index: 1; }
         #map { height: 100%; width: 100%; background: #1a1a2e; }
 
+        /* نافذة التنبيهات */
         #backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9998; backdrop-filter: blur(8px); }
         .legal-alert { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 420px; padding: 30px; border-radius: 25px; z-index: 9999; text-align: center; border: 2px solid #ff4757; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
         @keyframes slideUp { from { transform: translate(-50%, -20%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
@@ -47,11 +41,6 @@
             100% { box-shadow: 0 0 20px #ff0000; }
         }
         .critical-alert { animation: flashRed 1s infinite !important; border-width: 4px !important; }
-
-        #nav-hint { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #e74c3c; color: white; padding: 10px 20px; border-radius: 30px; z-index: 1001; display: none; box-shadow: 0 4px 15px rgba(0,0,0,0.3); font-weight: bold; text-align: center; }
-
-        /* إخفاء الواجهة النصية الجانبية لمكتبة المسارات */
-        .leaflet-routing-container { display: none !important; }
     </style>
 </head>
 <body>
@@ -59,18 +48,13 @@
 <div id="top-bar">
     <div class="dashboard">
         <div class="stat-box"><span class="stat-label">🚀 السرعة</span><span id="speed" class="stat-value">0</span><small>كم/س</small></div>
-        <div class="stat-box"><span class="stat-label">🧭 الاتجاه</span><span id="heading" class="stat-value">---</span></div>
-        <div class="stat-box"><span class="stat-label">🎯 المنطقة الحالية</span><span id="zone-check" class="stat-value" style="color:#00b894">آمنة</span></div>
-        <div class="stat-box"><span class="stat-label">📡 الحالة</span><span id="gps-status" class="stat-value" style="color:#ff4757">●</span></div>
+        <div class="stat-box"><span class="stat-label">🎯 المنطقة الحالية</span><span id="zone-check" class="stat-value" style="color:#00ff88">منطقة آمنة</span></div>
+        <div class="stat-box"><span class="stat-label">📡 الحالة</span><span id="gps-status" class="stat-value" style="color:#ff4757">غير مفعل</span></div>
     </div>
     <div class="controls">
-        <button id="btn-start" class="btn">📡 تفعيل التتبع</button>
-        <button id="btn-nav" class="btn">📍 الملاحة وتفادي المخالفات</button>
-        <button id="btn-save" class="btn">💾 حفظ المسار KML</button>
+        <button id="btn-start" class="btn">📡 تفعيل نظام الخرائط</button>
     </div>
 </div>
-
-<div id="nav-hint">انقر على الخريطة لتحديد الوجهة الآمنة<br><small>المسار سيتجنب النطاق الأحمر بالكامل</small></div>
 
 <div id="backdrop"></div>
 <div id="legal-modal" class="legal-alert">
@@ -83,10 +67,12 @@
 <div id="map-container"><div id="map"></div></div>
 
 <script>
+    // المناطق مرتبة من الأكبر إلى الأصغر
+    // تم توحيد ألوان الورديات لتكون "برتقالية" كما طلبت ليتحول لون السيارة للبرتقالي
     const zonesData = [
         {
             name: "النطاق الخارجي الأصفر", color: "#FFD700", 
-            msg: "أنت الآن داخل النطاق الخارجي الأصفر.",
+            msg: "أنت الآن داخل النطاق الخارجي الأصفر. يرجى الانتباه للتنظيمات المبدئية قبل الدخول للمناطق المركزية.",
             coords: [
                 [21.3114619988825, 40.26186344075736], [21.40202687265225, 40.27494792099847], [21.48579983331219, 40.24095331141512], 
                 [21.64940038404643, 40.44827723336594], [21.684579642463, 40.32089901815964], [21.66459070246338, 40.11539082282715], 
@@ -99,24 +85,28 @@
             ]
         },
         { 
-            name: "الوردية الأولى", color: "#F57C00", msg: "نطاق منع نقل غير المصرح لهم.",
+            name: "الوردية الأولى", color: "#F57C00", msg: "نطاق منع نقل غير المصرح لهم. تأكد من حمل التراخيص اللازمة لتجنب العقوبات.",
             coords: [[21.4205663,39.7784752],[21.4391024,39.775042],[21.4397415,39.7606225],[21.4359067,39.7571892],[21.4314325,39.7482628],[21.4298346,39.7444863],[21.4298346,39.7365899],[21.4288759,39.7247452],[21.4248809,39.7189087],[21.4218447,39.709124],[21.4180094,39.6969361],[21.4164113,39.6919579],[21.3799705,39.6969361],[21.3873233,39.7044892],[21.3932373,39.7092957],[21.4053841,39.7183938],[21.4112974,39.7240586],[21.4119366,39.7374482],[21.4114572,39.7444863],[21.4101787,39.7530694],[21.4135348,39.7544426],[21.4143338,39.7630257],[21.4146534,39.7678322],[21.416731,39.774012],[21.4205663,39.7784752]] 
         },
         { 
-            name: "الوردية الثانية", color: "#FBC02D", msg: "منطقة تتطلب الحصول على تصاريح رسمية لدخولها.",
+            name: "الوردية الثانية", color: "#F57C00", msg: "منطقة تتطلب الحصول على تصاريح رسمية لدخولها. يرجى إبراز التصريح الرقمي.",
             coords: [[21.349931,39.8036451],[21.3467333,39.7954053],[21.349931,39.7802991],[21.3448147,39.7658796],[21.3422565,39.7445936],[21.3422565,39.730174],[21.3435356,39.7116346],[21.3416169,39.6985883],[21.3396982,39.687602],[21.3358608,39.6711225],[21.3320232,39.6628827],[21.3320232,39.654643],[21.3365003,39.6381635],[21.3320232,39.6292371],[21.3173116,39.6402234],[21.2981204,39.6484632],[21.2898034,39.6580762],[21.2866044,39.6697492],[21.2795664,39.6834821],[21.2578106,39.7171277],[21.2334914,39.7377271],[21.2232506,39.75146],[21.2290112,39.774806],[21.2405316,39.8002118],[21.2430916,39.8098249],[21.2430916,39.8228711],[21.2616501,39.8283643],[21.2782868,39.8256177],[21.3013191,39.8180646],[21.3262667,39.8105115],[21.349931,39.8036451]] 
         },
         { 
-            name: "الوردية الثالثة", color: "#817717", msg: "منطقة مراقبة أمنية: يمنع الوقوف.",
+            name: "الوردية الثالثة", color: "#F57C00", msg: "منطقة مراقبة أمنية: يمنع الوقوف أو الانتظار في هذا النطاق لغير الحالات الطارئة.",
             coords: [[21.3534549,39.8504782],[21.350737,39.8424959],[21.3504973,39.8377752],[21.3512167,39.8328829],[21.3539827,39.8240503],[21.3539266,39.8209214],[21.353231,39.8179642],[21.3496484,39.8044189],[21.3420233,39.8052454],[21.3282721,39.8096228],[21.2968475,39.8193216],[21.2682957,39.8261023],[21.2439782,39.8261023],[21.2279777,39.8254156],[21.2242974,39.8250723],[21.2133358,39.8288489],[21.19109,39.8378611],[21.1795657,39.8458433],[21.1694812,39.8570872],[21.1669199,39.8638678],[21.1669999,39.8734808],[21.1694812,39.878974],[21.1758841,39.8849821],[21.1839674,39.893136],[21.1852479,39.8983717],[21.1858881,39.9043799],[21.188369,39.9092722],[21.1935708,39.9125338],[21.1978121,39.9133063],[21.2018132,39.9121905],[21.2082147,39.9101305],[21.2122155,39.9086714],[21.2140865,39.9083598],[21.2181366,39.9094439],[21.221257,39.9116755],[21.2237373,39.9132204],[21.2276577,39.9139929],[21.2326981,39.9147654],[21.2380583,39.9151945],[21.2441382,39.9156237],[21.2474981,39.9163103],[21.2534977,39.9190569],[21.2573373,39.9219752],[21.2659761,39.9342489],[21.2665666,39.935139],[21.2684862,39.9349673],[21.271495,39.9334765],[21.2766139,39.9306441],[21.286851,39.9239493],[21.2885305,39.9222326],[21.2888504,39.9199152],[21.2877307,39.916997],[21.2873615,39.9150546],[21.2896007,39.9124797],[21.2925291,39.9109888],[21.2942391,39.9102481],[21.2969275,39.9060965],[21.3028357,39.8993476],[21.2999969,39.8793491],[21.3134309,39.8774608],[21.3145103,39.8793061],[21.3158297,39.8769887],[21.3163094,39.8760017],[21.3251846,39.8737271],[21.326224,39.8757013],[21.3251004,39.8751004],[21.3273433,39.8787912],[21.3273433,39.8787053],[21.3408547,39.8614534],[21.3534549,39.8504782]] 
         },
         { 
-            name: "الوردية الرابعة", color: "#007cf5", msg: "نطاق تنظيمي خاص.",
+            name: "الوردية الرابعة", color: "#F57C00", msg: "نطاق تنظيمي خاص: يرجى الالتزام بالمسارات المحددة لضمان انسيابية الحركة.",
             coords: [[21.3768231,39.6915736],[21.3429272,39.7071064],[21.3434134,39.7106172],[21.3435298,39.7114535],[21.3434756,39.7128731],[21.3425379,39.7263627],[21.3424377,39.7341783],[21.3425794,39.7417194],[21.3427933,39.7456146],[21.3430165,39.7476955],[21.3437566,39.7526972],[21.3439753,39.7561032],[21.3443700,39.7608616],[21.3452364,39.7668436],[21.3455672,39.7677304],[21.3477767,39.7736598],[21.3494679,39.7755813],[21.3545090,39.7738075],[21.3741795,39.7658747],[21.3798482,39.7645530],[21.3942631,39.7620645],[21.3996377,39.7611926],[21.4036783,39.7587149],[21.4094647,39.7547994],[21.4101935,39.7517526],[21.4114849,39.7433814],[21.4117082,39.7392697],[21.4117093,39.7353041],[21.4116063,39.7340390],[21.4115296,39.7317470],[21.4114596,39.7305534],[21.4113608,39.7279882],[21.4112776,39.7257227],[21.4112293,39.7244106],[21.4112254,39.7240175],[21.3849936,39.7023201],[21.3798798,39.6968708],[21.3768231,39.6915736]] 
+        },
+        { 
+            name: "إسكان قوى الأمن", color: "#F57C00", msg: "أنت الآن داخل نطاق إسكان قوى الأمن. يرجى الالتزام بالتعليمات المحددة.",
+            coords: [ [21.62277792148566, 39.20608824874515], [21.62018705577081, 39.19657295896057], [21.61139727513645, 39.1993972627275], [21.61414230975821, 39.20861967620993], [21.62277792148566, 39.20608824874515] ] 
         },
         {
             name: "النطاق الاحمر (مخالفات فورية)", color: "#ff0000",
-            msg: "مخالفة فورية! أنت داخل النطاق الأحمر المحظور، غادر فوراً.",
+            msg: "مخالفة فورية! أنت داخل النطاق الأحمر المحظور، غادر فوراً وتجنب هذا المسار.",
             coords: [
                 [21.51577097414043, 39.89780394502168], [21.53261348485238, 39.75571187580298], [21.47325831732579, 39.67469554471128], 
                 [21.41150094976036, 39.67713892574493], [21.36341468151538, 39.67191190533878], [21.32730259062046, 39.66748383181117], 
@@ -125,11 +115,7 @@
             ]
         },
         { 
-            name: "إسكان قوى الأمن", color: "#007cf5", msg: "أنت الآن داخل نطاق إسكان قوى الأمن.",
-            coords: [ [21.62277792148566, 39.20608824874515], [21.62018705577081, 39.19657295896057], [21.61139727513645, 39.1993972627275], [21.61414230975821, 39.20861967620993], [21.62277792148566, 39.20608824874515] ] 
-        },
-        { 
-            name: "النطاق الخطر", color: "#ff0000", msg: "أنت الآن داخل النطاق الخطر!",
+            name: "النطاق الخطر", color: "#ff0000", msg: "أنت الآن داخل النطاق الخطر! أخذ أقصى درجات الحيطة والحذر وتقليل السرعة فوراً.",
             coords: [
                 [21.61315980513245, 39.19946309800559], [21.61314118663266, 39.19947523076321], [21.61309809596615, 39.19950118839947], 
                 [21.61306151952578, 39.1995308039017], [21.6130129899847, 39.19957605879783], [21.6129888313132, 39.19960157042568], 
@@ -164,22 +150,28 @@
     zonesData.forEach(z => {
         let fillOp = 0.15;
         let borderWeight = 2;
-        if (z.name === "النطاق الخطر" || z.name === "النطاق الاحمر (مخالفات فورية)") {
+        if (z.color === "#ff0000") {
             fillOp = 0.25; 
             borderWeight = 3;
-        } else if (z.name === "النطاق الخارجي الأصفر") {
+        } else if (z.color === "#FFD700") {
             fillOp = 0.08; 
         }
         L.polygon(z.coords, { color: z.color, fillOpacity: fillOp, weight: borderWeight }).addTo(map).bindPopup(z.name);
     });
 
-    let pathCoords = [];
-    let pathLine = L.polyline([], { color: '#ff4757', weight: 4 }).addTo(map);
-    let navMode = false;
-    let routingControl = null;
-    let destinationMarker = null;
-    let lastZoneName = null;
+    // دالة لتوليد أيقونة سيارة بلون مخصص باستخدام Base64 لضمان عملها بشكل مثالي في جميع المتصفحات
+    function getCarIcon(colorCode) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="${colorCode}" stroke="#ffffff" stroke-width="15" d="M499.99 176h-59.87l-16.64-41.6C406.38 91.63 365.57 64 319.5 64h-127c-46.06 0-86.88 27.63-103.99 70.4L71.87 176H12.01C4.2 176-1.53 183.34.37 190.91l6 24C7.7 220.25 12.5 224 18.01 224h20.07C24.65 235.73 16 252.78 16 272v48c0 16.12 6.16 30.67 16 41.93V416c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h256v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-54.07c9.84-11.25 16-25.8 16-41.93v-48c0-19.22-8.65-36.27-22.07-48H494c5.51 0 10.31-3.75 11.64-9.09l6-24c1.89-7.57-3.84-14.91-11.65-14.91zM119.2 148.8C127.75 127.41 148.16 112 171.5 112h169c23.34 0 43.75 15.41 52.3 36.8l17.6 44H101.6l17.6-44zM96 352c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm320 0c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z"/></svg>`;
+        return L.icon({
+            iconUrl: 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg),
+            iconSize: [45, 45],
+            iconAnchor: [22, 22]
+        });
+    }
+
     let wakeLock = null;
+    let lastAlertZoneName = null;
+    let lastAlertLocation = null;
 
     function playAlertSound(isCritical = false) {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -211,187 +203,49 @@
     }
 
     document.getElementById('btn-start').onclick = function() {
-        if (!navigator.geolocation) return alert("GPS غير مدعوم");
+        if (!navigator.geolocation) return alert("GPS غير مدعوم في جهازك");
+        
         this.disabled = true;
-        document.getElementById('btn-save').style.display = 'block';
+        this.textContent = "جاري تحديد الموقع...";
+        document.getElementById('gps-status').textContent = "متصل";
         document.getElementById('gps-status').style.color = '#00ff88';
 
         if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(lock => wakeLock = lock);
 
-        navigator.geolocation.watchPosition(pos => {
-            const { latitude, longitude, speed, heading } = pos.coords;
-            const kmh = speed ? (speed * 3.6).toFixed(1) : 0;
-            
-            document.getElementById('speed').textContent = kmh;
-            document.getElementById('heading').textContent = heading ? heading.toFixed(0) + "°" : "---";
-            
-            const currentPos = [latitude, longitude];
-            pathCoords.push(currentPos);
-            pathLine.setLatLngs(pathCoords);
-            
-            if (window.userMarker) map.removeLayer(window.userMarker);
-            window.userMarker = L.circleMarker(currentPos, { radius: 10, color: '#fff', fillColor: '#0078ff', fillOpacity: 1, zIndexOffset: 1000 }).addTo(map);
-            
-            if (!navMode && !routingControl) map.setView(currentPos, 15);
-            checkZones(latitude, longitude);
-        }, null, { enableHighAccuracy: true });
+        // طلب استدعاء لمرة واحدة أولاً لضمان ظهور السيارة فوراً بدون تأخير
+        navigator.geolocation.getCurrentPosition(updatePosition, null, { enableHighAccuracy: true });
+
+        // ثم تشغيل المراقبة المستمرة لتحرك السيارة
+        navigator.geolocation.watchPosition(updatePosition, null, { enableHighAccuracy: true });
     };
 
-    document.getElementById('btn-nav').onclick = function() {
-        if (!window.userMarker) return alert("يرجى تفعيل التتبع أولاً لتحديد نقطة انطلاقك!");
-        navMode = true;
-        document.getElementById('nav-hint').style.display = 'block';
-    };
-
-    map.on('click', function(e) {
-        if (!navMode) return;
+    function updatePosition(pos) {
+        const { latitude, longitude, speed, heading } = pos.coords;
+        const kmh = speed ? (speed * 3.6).toFixed(1) : 0;
         
-        let isDestInvalid = false;
-        let criticalZones = zonesData.filter(z => z.color === "#ff0000" || z.name.includes("الاحمر"));
-        for(let z of criticalZones) {
-            if(isPointInPoly(e.latlng.lat, e.latlng.lng, z.coords)) {
-                isDestInvalid = true;
-                showLegalAlert("🛑 الوجهة المطلوبة تقع داخل منطقة محظورة. يرجى اختيار وجهة خارج النطاق الأحمر.", "#ff0000", true);
-                playAlertSound(true);
-                break;
-            }
+        document.getElementById('speed').textContent = kmh;
+        document.getElementById('heading').textContent = heading ? heading.toFixed(0) + "°" : "---";
+        
+        const currentPos = [latitude, longitude];
+        
+        // إنشاء السيارة باللون الأخضر (الآمن) كوضع افتراضي في البداية
+        if (!window.userMarker) {
+            window.userMarker = L.marker(currentPos, { icon: getCarIcon('#00ff88'), zIndexOffset: 1000 }).addTo(map);
+            map.setView(currentPos, 15);
+        } else {
+            window.userMarker.setLatLng(currentPos);
+            // جعل الخريطة تتحرك مع السيارة
+            map.setView(currentPos, map.getZoom()); 
         }
         
-        if (isDestInvalid) {
-            navMode = false;
-            document.getElementById('nav-hint').style.display = 'none';
-            return;
-        }
-        
-        if (destinationMarker) map.removeLayer(destinationMarker);
-        destinationMarker = L.marker(e.latlng).addTo(map).bindPopup("وجهتك").openPopup();
-        
-        document.getElementById('nav-hint').style.display = 'none';
-        navMode = false;
-        
-        if (routingControl) map.removeControl(routingControl);
-        
-        // خوارزمية الغلاف المتعدد (Perimeter Envelope Detour)
-        let detourResult = calculateDetourWaypoints(window.userMarker.getLatLng(), e.latlng);
-        
-        routingControl = L.Routing.control({
-            waypoints: detourResult.waypoints,
-            router: L.Routing.osrmv1({
-                serviceUrl: 'https://router.project-osrm.org/route/v1',
-                profile: 'driving'
-            }),
-            lineOptions: {
-                styles: [{color: '#00ff88', opacity: 0.9, weight: 6, dashArray: '1, 8'}] // خط المسار الآمن
-            },
-            show: false, // إخفاء التعليمات النصية لتبسيط الواجهة
-            addWaypoints: false,
-            createMarker: function(i, wp, nWps) {
-                // إخفاء كل العلامات الوسيطة الوهمية التي نصنعها للالتفاف
-                if (i === 0 || i === nWps - 1) return null; // البداية والنهاية مرسومة مسبقاً
-                return null;
-            }
-        }).addTo(map);
-
-        if (detourResult.intersected) {
-            showLegalAlert("✅ تم حساب مسار التفافي آمن.\n\nسيقوم النظام الآن بتوجيهك عبر الطرق الدائرية السريعة (Ring Roads) لتجنب دخول النطاق الأحمر نهائياً.", "#00b894", false);
-        }
-    });
-
-    // خوارزمية الغلاف المتعدد لتوليد نقاط التفاف تحيط بالمنطقة المحظورة 
-    function calculateDetourWaypoints(startLatLng, endLatLng) {
-        let startPt = turf.point([startLatLng.lng, startLatLng.lat]);
-        let endPt = turf.point([endLatLng.lng, endLatLng.lat]);
-        let directLine = turf.lineString([startPt.geometry.coordinates, endPt.geometry.coordinates]);
-
-        let waypoints = [];
-        let intersected = false;
-
-        let criticalZones = zonesData.filter(z => z.color === "#ff0000" || z.name.includes("الاحمر") || z.name.includes("الخطر"));
-
-        for (let zone of criticalZones) {
-            let coords = zone.coords.map(c => [c[1], c[0]]);
-            if (coords[0][0] !== coords[coords.length-1][0] || coords[0][1] !== coords[coords.length-1][1]) {
-                coords.push(coords[0]);
-            }
-            let poly = turf.polygon([coords]);
-
-            if (!turf.booleanPointInPolygon(startPt, poly) && turf.booleanIntersects(directLine, poly)) {
-                intersected = true;
-                
-                // 1. حساب شكل مبسط (Convex Hull) يغلف المنطقة الحمراء بالكامل
-                let hull = turf.convex(turf.featureCollection([poly]));
-                
-                // 2. تضخيم هذا الغلاف بمسافة 5 كيلومترات. هذا يضمن أن النقاط ستقع على الطرق السريعة خارج المنطقة.
-                let buffered = turf.buffer(hull, 5, {units: 'kilometers'});
-                let perimeterCoords = buffered.geometry.coordinates[0];
-                
-                // 3. إيجاد أقرب نقطتين على هذا الغلاف لنقطة البداية ونقطة النهاية
-                let startIdx = 0, endIdx = 0;
-                let minDistStart = Infinity, minDistEnd = Infinity;
-                
-                for(let i = 0; i < perimeterCoords.length - 1; i++) {
-                    let pt = turf.point(perimeterCoords[i]);
-                    let dStart = turf.distance(startPt, pt);
-                    let dEnd = turf.distance(endPt, pt);
-                    if(dStart < minDistStart) { minDistStart = dStart; startIdx = i; }
-                    if(dEnd < minDistEnd) { minDistEnd = dEnd; endIdx = i; }
-                }
-                
-                // 4. فصل الغلاف إلى طريقين (واحد من اليمين وواحد من اليسار)
-                let path1 = [], path2 = [];
-                let n = perimeterCoords.length - 1;
-                
-                // الطريق الأول (دوران أمامي)
-                let i = startIdx;
-                while(true) {
-                    path1.push(perimeterCoords[i]);
-                    if(i === endIdx) break;
-                    i = (i + 1) % n;
-                }
-                
-                // الطريق الثاني (دوران خلفي)
-                let j = startIdx;
-                while(true) {
-                    path2.push(perimeterCoords[j]);
-                    if(j === endIdx) break;
-                    j = (j - 1 + n) % n;
-                }
-                
-                // 5. اختيار الطريق الأقصر
-                let line1 = turf.lineString(path1.length > 1 ? path1 : [path1[0], path1[0]]);
-                let line2 = turf.lineString(path2.length > 1 ? path2 : [path2[0], path2[0]]);
-                let chosenPath = turf.length(line1) < turf.length(line2) ? path1 : path2;
-                
-                // 6. أخذ عينات (Waypoints) من الطريق المختار لتوجيه محرك OSRM
-                // نأخذ 4 نقاط كحد أقصى موزعة بانتظام على طول الغلاف الآمن
-                let numSamples = Math.min(4, chosenPath.length); 
-                let step = Math.max(1, Math.floor(chosenPath.length / numSamples));
-                
-                for(let k = 0; k < chosenPath.length; k += step) {
-                    waypoints.push(L.latLng(chosenPath[k][1], chosenPath[k][0]));
-                }
-                
-                // التأكد من إضافة النقطة الأخيرة من مسار الالتفاف
-                if (waypoints.length > 0 && chosenPath.length > 0) {
-                    let lastPt = chosenPath[chosenPath.length-1];
-                    let lastLatLng = L.latLng(lastPt[1], lastPt[0]);
-                    if(waypoints[waypoints.length-1].lat !== lastLatLng.lat) {
-                        waypoints.push(lastLatLng);
-                    }
-                }
-                
-                break; // اكتفينا بالالتفاف حول أول منطقة حمراء تم اعتراضها لتجنب تعقيد زائد للمحرك المجاني
-            }
-        }
-        
-        return { 
-            waypoints: [startLatLng, ...waypoints, endLatLng], 
-            intersected: intersected 
-        };
+        checkZones(latitude, longitude);
     }
 
     function checkZones(lat, lng) {
+        let currentLatLng = L.latLng(lat, lng);
         let foundZone = null;
+        
+        // فحص المناطق
         zonesData.forEach(z => {
             if (isPointInPoly(lat, lng, z.coords)) foundZone = z;
         });
@@ -400,14 +254,36 @@
         const alertIcon = document.getElementById('alert-icon-display');
         const modal = document.getElementById('legal-modal');
 
+        // 1. تغيير لون أيقونة السيارة ديناميكياً بناءً على النطاق
+        let carColor = foundZone ? foundZone.color : '#00ff88'; 
+        if (window.userMarker) {
+            window.userMarker.setIcon(getCarIcon(carColor));
+        }
+
+        // 2. خوارزمية التنبيه (تكرار كل 5 كيلو)
         if (foundZone) {
             label.textContent = foundZone.name;
             label.style.color = foundZone.color;
             
-            if (lastZoneName !== foundZone.name) {
-                lastZoneName = foundZone.name;
+            let shouldShowAlert = false;
+            
+            if (lastAlertZoneName !== foundZone.name) {
+                // إذا تغير النطاق، اعرض التنبيه فوراً
+                shouldShowAlert = true;
+            } else if (lastAlertLocation) {
+                // إذا كان نفس النطاق، تحقق من المسافة المقطوعة (5000 متر = 5 كيلو)
+                let distanceMeters = currentLatLng.distanceTo(lastAlertLocation);
+                if (distanceMeters >= 5000) {
+                    shouldShowAlert = true;
+                }
+            }
+
+            // إظهار نافذة التنبيه والصوت
+            if (shouldShowAlert) {
+                lastAlertZoneName = foundZone.name;
+                lastAlertLocation = currentLatLng; // تصفير نقطة الحساب للـ 5 كيلو القادمة
                 
-                let isCritical = (foundZone.name === "النطاق الخطر" || foundZone.name === "النطاق الاحمر (مخالفات فورية)");
+                let isCritical = (foundZone.color === "#ff0000");
                 playAlertSound(isCritical);
                 
                 if (isCritical) {
@@ -426,8 +302,8 @@
             }
         } else {
             label.textContent = "منطقة آمنة";
-            label.style.color = "#00b894";
-            lastZoneName = null;
+            label.style.color = "#00ff88";
+            lastAlertZoneName = null; // تصفير لتنبيه المستخدم مباشرة عند دخوله أي نطاق جديد
         }
     }
 
@@ -462,15 +338,6 @@
         modal.style.display = 'none';
         modal.classList.remove('critical-alert');
     }
-
-    document.getElementById('btn-save').onclick = function() {
-        let coords = pathCoords.map(p => `${p[1]},${p[0]},0`).join(' ');
-        let kml = `<?xml version="1.0" encoding="UTF-8"?><kml xmlns="http://www.opengis.net/kml/2.2"><Document><Placemark><name>مساري</name><LineString><coordinates>${coords}</coordinates></LineString></Placemark></Document></kml>`;
-        let blob = new Blob([kml], {type: "application/vnd.google-earth.kml+xml"});
-        let url = URL.createObjectURL(blob);
-        let a = document.createElement('a');
-        a.href = url; a.download = "MyTrack.kml"; a.click();
-    };
 </script>
 </body>
 </html>
