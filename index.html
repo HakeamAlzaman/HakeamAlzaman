@@ -67,8 +67,6 @@
 <div id="map-container"><div id="map"></div></div>
 
 <script>
-    // المناطق مرتبة من الأكبر إلى الأصغر
-    // تم توحيد ألوان الورديات لتكون "برتقالية" كما طلبت ليتحول لون السيارة للبرتقالي
     const zonesData = [
         {
             name: "النطاق الخارجي الأصفر", color: "#FFD700", 
@@ -100,10 +98,6 @@
             name: "الوردية الرابعة", color: "#F57C00", msg: "نطاق تنظيمي خاص: يرجى الالتزام بالمسارات المحددة لضمان انسيابية الحركة.",
             coords: [[21.3768231,39.6915736],[21.3429272,39.7071064],[21.3434134,39.7106172],[21.3435298,39.7114535],[21.3434756,39.7128731],[21.3425379,39.7263627],[21.3424377,39.7341783],[21.3425794,39.7417194],[21.3427933,39.7456146],[21.3430165,39.7476955],[21.3437566,39.7526972],[21.3439753,39.7561032],[21.3443700,39.7608616],[21.3452364,39.7668436],[21.3455672,39.7677304],[21.3477767,39.7736598],[21.3494679,39.7755813],[21.3545090,39.7738075],[21.3741795,39.7658747],[21.3798482,39.7645530],[21.3942631,39.7620645],[21.3996377,39.7611926],[21.4036783,39.7587149],[21.4094647,39.7547994],[21.4101935,39.7517526],[21.4114849,39.7433814],[21.4117082,39.7392697],[21.4117093,39.7353041],[21.4116063,39.7340390],[21.4115296,39.7317470],[21.4114596,39.7305534],[21.4113608,39.7279882],[21.4112776,39.7257227],[21.4112293,39.7244106],[21.4112254,39.7240175],[21.3849936,39.7023201],[21.3798798,39.6968708],[21.3768231,39.6915736]] 
         },
-        { 
-            name: "إسكان قوى الأمن", color: "#F57C00", msg: "أنت الآن داخل نطاق إسكان قوى الأمن. يرجى الالتزام بالتعليمات المحددة.",
-            coords: [ [21.62277792148566, 39.20608824874515], [21.62018705577081, 39.19657295896057], [21.61139727513645, 39.1993972627275], [21.61414230975821, 39.20861967620993], [21.62277792148566, 39.20608824874515] ] 
-        },
         {
             name: "النطاق الاحمر (مخالفات فورية)", color: "#ff0000",
             msg: "مخالفة فورية! أنت داخل النطاق الأحمر المحظور، غادر فوراً وتجنب هذا المسار.",
@@ -113,6 +107,10 @@
                 [21.28948613151358, 39.77330118006482], [21.27334085400369, 39.91045171649711], [21.28806702414635, 40.01243928181768], 
                 [21.30885857533626, 40.04117083514495], [21.51577097414043, 39.89780394502168]
             ]
+        },
+        { 
+            name: "إسكان قوى الأمن", color: "#F57C00", msg: "أنت الآن داخل نطاق إسكان قوى الأمن. يرجى الالتزام بالتعليمات المحددة.",
+            coords: [ [21.62277792148566, 39.20608824874515], [21.62018705577081, 39.19657295896057], [21.61139727513645, 39.1993972627275], [21.61414230975821, 39.20861967620993], [21.62277792148566, 39.20608824874515] ] 
         },
         { 
             name: "النطاق الخطر", color: "#ff0000", msg: "أنت الآن داخل النطاق الخطر! أخذ أقصى درجات الحيطة والحذر وتقليل السرعة فوراً.",
@@ -159,7 +157,7 @@
         L.polygon(z.coords, { color: z.color, fillOpacity: fillOp, weight: borderWeight }).addTo(map).bindPopup(z.name);
     });
 
-    // دالة لتوليد أيقونة سيارة بلون مخصص باستخدام Base64 لضمان عملها بشكل مثالي في جميع المتصفحات
+    // دالة لتوليد أيقونة سيارة بلون مخصص باستخدام Base64
     function getCarIcon(colorCode) {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><path fill="${colorCode}" stroke="#ffffff" stroke-width="15" d="M499.99 176h-59.87l-16.64-41.6C406.38 91.63 365.57 64 319.5 64h-127c-46.06 0-86.88 27.63-103.99 70.4L71.87 176H12.01C4.2 176-1.53 183.34.37 190.91l6 24C7.7 220.25 12.5 224 18.01 224h20.07C24.65 235.73 16 252.78 16 272v48c0 16.12 6.16 30.67 16 41.93V416c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-32h256v32c0 17.67 14.33 32 32 32h32c17.67 0 32-14.33 32-32v-54.07c9.84-11.25 16-25.8 16-41.93v-48c0-19.22-8.65-36.27-22.07-48H494c5.51 0 10.31-3.75 11.64-9.09l6-24c1.89-7.57-3.84-14.91-11.65-14.91zM119.2 148.8C127.75 127.41 148.16 112 171.5 112h169c23.34 0 43.75 15.41 52.3 36.8l17.6 44H101.6l17.6-44zM96 352c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32zm320 0c-17.67 0-32-14.33-32-32s14.33-32 32-32 32 14.33 32 32-14.33 32-32 32z"/></svg>`;
         return L.icon({
@@ -172,6 +170,7 @@
     let wakeLock = null;
     let lastAlertZoneName = null;
     let lastAlertLocation = null;
+    let watchId = null;
 
     function playAlertSound(isCritical = false) {
         const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -207,16 +206,34 @@
         
         this.disabled = true;
         this.textContent = "جاري تحديد الموقع...";
-        document.getElementById('gps-status').textContent = "متصل";
-        document.getElementById('gps-status').style.color = '#00ff88';
+        
+        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(lock => wakeLock = lock).catch(()=>{});
 
-        if ('wakeLock' in navigator) navigator.wakeLock.request('screen').then(lock => wakeLock = lock);
+        const geoOptions = { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 };
 
-        // طلب استدعاء لمرة واحدة أولاً لضمان ظهور السيارة فوراً بدون تأخير
-        navigator.geolocation.getCurrentPosition(updatePosition, null, { enableHighAccuracy: true });
+        // دالة معالجة الأخطاء
+        const handleError = (err) => {
+            console.warn(`ERROR(${err.code}): ${err.message}`);
+            this.disabled = false;
+            this.textContent = "📡 تفعيل نظام الخرائط";
+            document.getElementById('gps-status').textContent = "فشل التحديد";
+            document.getElementById('gps-status').style.color = '#ff4757';
+            
+            if(err.code === 1) alert("الرجاء السماح للمتصفح بالوصول إلى موقعك (Location Permission).");
+            else alert("تعذر تحديد الموقع. يرجى التأكد من تفعيل الـ GPS والمحاولة مجدداً.");
+        };
 
-        // ثم تشغيل المراقبة المستمرة لتحرك السيارة
-        navigator.geolocation.watchPosition(updatePosition, null, { enableHighAccuracy: true });
+        // طلب موقع فوري لسرعة الاستجابة
+        navigator.geolocation.getCurrentPosition((pos) => {
+            this.textContent = "مفعل";
+            document.getElementById('gps-status').textContent = "متصل";
+            document.getElementById('gps-status').style.color = '#00ff88';
+            updatePosition(pos);
+            
+            // بدء التتبع المستمر بعد نجاح التحديد الأول
+            if(watchId) navigator.geolocation.clearWatch(watchId);
+            watchId = navigator.geolocation.watchPosition(updatePosition, handleError, geoOptions);
+        }, handleError, geoOptions);
     };
 
     function updatePosition(pos) {
@@ -228,13 +245,11 @@
         
         const currentPos = [latitude, longitude];
         
-        // إنشاء السيارة باللون الأخضر (الآمن) كوضع افتراضي في البداية
         if (!window.userMarker) {
             window.userMarker = L.marker(currentPos, { icon: getCarIcon('#00ff88'), zIndexOffset: 1000 }).addTo(map);
             map.setView(currentPos, 15);
         } else {
             window.userMarker.setLatLng(currentPos);
-            // جعل الخريطة تتحرك مع السيارة
             map.setView(currentPos, map.getZoom()); 
         }
         
@@ -245,7 +260,6 @@
         let currentLatLng = L.latLng(lat, lng);
         let foundZone = null;
         
-        // فحص المناطق
         zonesData.forEach(z => {
             if (isPointInPoly(lat, lng, z.coords)) foundZone = z;
         });
@@ -254,13 +268,11 @@
         const alertIcon = document.getElementById('alert-icon-display');
         const modal = document.getElementById('legal-modal');
 
-        // 1. تغيير لون أيقونة السيارة ديناميكياً بناءً على النطاق
         let carColor = foundZone ? foundZone.color : '#00ff88'; 
         if (window.userMarker) {
             window.userMarker.setIcon(getCarIcon(carColor));
         }
 
-        // 2. خوارزمية التنبيه (تكرار كل 5 كيلو)
         if (foundZone) {
             label.textContent = foundZone.name;
             label.style.color = foundZone.color;
@@ -268,20 +280,17 @@
             let shouldShowAlert = false;
             
             if (lastAlertZoneName !== foundZone.name) {
-                // إذا تغير النطاق، اعرض التنبيه فوراً
                 shouldShowAlert = true;
             } else if (lastAlertLocation) {
-                // إذا كان نفس النطاق، تحقق من المسافة المقطوعة (5000 متر = 5 كيلو)
                 let distanceMeters = currentLatLng.distanceTo(lastAlertLocation);
                 if (distanceMeters >= 5000) {
                     shouldShowAlert = true;
                 }
             }
 
-            // إظهار نافذة التنبيه والصوت
             if (shouldShowAlert) {
                 lastAlertZoneName = foundZone.name;
-                lastAlertLocation = currentLatLng; // تصفير نقطة الحساب للـ 5 كيلو القادمة
+                lastAlertLocation = currentLatLng; 
                 
                 let isCritical = (foundZone.color === "#ff0000");
                 playAlertSound(isCritical);
@@ -303,7 +312,7 @@
         } else {
             label.textContent = "منطقة آمنة";
             label.style.color = "#00ff88";
-            lastAlertZoneName = null; // تصفير لتنبيه المستخدم مباشرة عند دخوله أي نطاق جديد
+            lastAlertZoneName = null; 
         }
     }
 
