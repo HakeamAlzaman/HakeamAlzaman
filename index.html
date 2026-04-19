@@ -12,15 +12,17 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background: #0a0a12; color: white; }
         
+        /* شريط المعلومات العلوي */
         #top-bar { position: fixed; top: 0; left: 0; right: 0; min-height: 90px; background: rgba(16, 16, 30, 0.95); border-bottom: 2px solid #00b894; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .dashboard { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .dashboard { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 8px; }
         
-        .stat-box { background: rgba(255,255,255,0.05); padding: 8px 15px; border-radius: 12px; border: 1px solid rgba(0,184,148,0.3); text-align: center; min-width: 100px; flex: 1; }
-        .stat-label { font-size: 11px; color: #aaa; display: block; margin-bottom: 5px; }
-        .stat-value { font-size: 15px; font-weight: bold; color: #fff; direction: ltr; display: inline-block; }
+        .stat-box { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(0,184,148,0.3); text-align: center; flex: 1; min-width: 90px; }
+        .stat-label { font-size: 11px; color: #aaa; display: block; margin-bottom: 4px; }
+        .stat-value { font-size: 14px; font-weight: bold; color: #fff; }
+        .stat-sub { font-size: 10px; color: #888; }
 
         .controls { display: flex; gap: 10px; margin-top: 10px; justify-content: center; flex-wrap: wrap; }
-        .btn { border: none; padding: 12px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .btn { border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         #btn-start { background: linear-gradient(135deg, #00b894 0%, #00a085 100%); color: white; }
         #btn-settings { background: #34495e; color: white; border: 1px solid #576574; }
         .btn:disabled { background: #00b894; cursor: not-allowed; box-shadow: none; opacity: 0.9; }
@@ -30,7 +32,6 @@
 
         /* نافذة التنبيهات والمودال */
         #backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9998; backdrop-filter: blur(8px); }
-        
         .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 420px; background: #161625; padding: 30px; border-radius: 20px; z-index: 9999; text-align: center; border: 1px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.7); color: white; }
         
         .legal-alert { border: 2px solid #ff4757; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -53,20 +54,15 @@
         .zone-option input[type="checkbox"] { transform: scale(1.3); cursor: pointer; accent-color: #00b894; }
         .zone-color-box { width: 16px; height: 16px; border-radius: 4px; display: inline-block; border: 1px solid rgba(255,255,255,0.5); }
         .save-settings-btn { background: #00b894; color: white; border: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
-
-        /* كلاس الأيقونة النقي بدون أي تدخلات خارجية */
-        .pure-html-marker {
-            background: transparent;
-            border: none;
-        }
     </style>
 </head>
 <body>
 
 <div id="top-bar">
     <div class="dashboard">
-        <div class="stat-box"><span class="stat-label">🚀 السرعة</span><span id="speed" class="stat-value">0</span><span style="font-size:10px;">كم/س</span></div>
-        <div class="stat-box"><span class="stat-label">📍 الموقع</span><span id="coords-display" class="stat-value" style="font-size: 12px; color:#aaa;">جاري البحث...</span></div>
+        <div class="stat-box"><span class="stat-label">🚀 السرعة</span><span id="speed" class="stat-value">0</span> <span class="stat-sub">كم/س</span></div>
+        <div class="stat-box"><span class="stat-label">📍 الموقع</span><span id="coords-display" class="stat-value" style="font-size: 13px; direction: ltr;">---</span></div>
+        <div class="stat-box"><span class="stat-label">📶 إشارة GPS</span><span id="signal-strength" class="stat-value" style="color:#aaa;">---</span> <span id="accuracy-val" class="stat-sub"></span></div>
         <div class="stat-box"><span class="stat-label">🎯 المنطقة</span><span id="zone-check" class="stat-value" style="color:#00ff88">منطقة آمنة</span></div>
         <div class="stat-box"><span class="stat-label">📡 الحالة</span><span id="gps-status" class="stat-value" style="color:#ff4757">غير متصل</span></div>
     </div>
@@ -171,16 +167,13 @@
         }
     ];
 
-    // قائمة بأسماء المناطق المفعّلة حالياً (الافتراضي: الكل مفعل)
     let activeZones = masterZonesData.map(z => z.name);
     
-    // طبقة لاحتواء المضلعات
     let polygonsLayer = L.layerGroup();
     let map = L.map('map', { zoomControl: false, attributionControl: false }).setView([21.4, 39.8], 10);
     L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
     polygonsLayer.addTo(map);
 
-    // دالة رسم المناطق المفعلة فقط
     function renderZones() {
         polygonsLayer.clearLayers();
         masterZonesData.forEach(z => {
@@ -200,7 +193,6 @@
     
     renderZones();
 
-    // إعدادات المناطق
     function initSettingsModal() {
         const container = document.getElementById('zones-list-container');
         container.innerHTML = '';
@@ -237,16 +229,6 @@
             let latlng = window.userMarker.getLatLng();
             checkZones(latlng.lat, latlng.lng);
         }
-    }
-
-    // بناء أيقونة نقطة التتبع بتقنية HTML الخالصة
-    function getMarkerIcon(colorCode) {
-        return L.divIcon({
-            className: 'pure-html-marker',
-            html: `<div style="background-color: ${colorCode}; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.8);"></div>`,
-            iconSize: [20, 20],
-            iconAnchor: [10, 10]
-        });
     }
 
     let wakeLock = null;
@@ -305,47 +287,62 @@
 
         const handleError = (err) => {
             console.warn(`ERROR(${err.code}): ${err.message}`);
-            btn.disabled = false;
-            btn.textContent = "📡 تفعيل تحديد الموقع";
-            document.getElementById('gps-status').textContent = "فشل التحديد";
-            document.getElementById('gps-status').style.color = '#ff4757';
-            document.getElementById('coords-display').textContent = "---";
-            
-            if(err.code === 1) alert("الرجاء السماح للمتصفح بالوصول إلى موقعك.");
-            else alert("تعذر تحديد الموقع. يرجى التأكد من تفعيل الـ GPS والمحاولة مجدداً.");
+            // لا نوقف الزر تماماً حتى نعطي فرصة للـ WatchPosition أن يلتقط الإشارة بعد قليل
+            if(err.code === 1) {
+                btn.disabled = false;
+                btn.textContent = "📡 تفعيل تحديد الموقع";
+                document.getElementById('gps-status').textContent = "مرفوض";
+                document.getElementById('gps-status').style.color = '#ff4757';
+                alert("الرجاء السماح للمتصفح بالوصول إلى موقعك.");
+            } else {
+                document.getElementById('gps-status').textContent = "إشارة ضعيفة";
+                document.getElementById('gps-status').style.color = '#ff4757';
+            }
         };
 
-        // طلب موقع أولي سريع
-        navigator.geolocation.getCurrentPosition((pos) => {
+        // مسح المراقبة القديمة والبدء من جديد
+        if(watchId) navigator.geolocation.clearWatch(watchId);
+        
+        watchId = navigator.geolocation.watchPosition((pos) => {
             btn.textContent = "مفعل";
             document.getElementById('gps-status').textContent = "متصل";
             document.getElementById('gps-status').style.color = '#00ff88';
             updatePosition(pos);
-            
-            // التتبع المستمر
-            if(watchId) navigator.geolocation.clearWatch(watchId);
-            watchId = navigator.geolocation.watchPosition(updatePosition, handleError, geoOptions);
         }, handleError, geoOptions);
     };
 
     function updatePosition(pos) {
-        const { latitude, longitude, speed, heading } = pos.coords;
+        const { latitude, longitude, speed, heading, accuracy } = pos.coords;
         const kmh = speed ? (speed * 3.6).toFixed(1) : 0;
         
-        // تحديث البيانات على الشاشة
+        // تحديث البيانات على الشاشة (السرعة والموقع والإشارة)
         document.getElementById('speed').textContent = kmh;
-        document.getElementById('coords-display').textContent = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
+        document.getElementById('coords-display').innerHTML = `<span dir="ltr">${latitude.toFixed(5)}, ${longitude.toFixed(5)}</span>`;
         document.getElementById('coords-display').style.color = '#fff';
         
+        let sigText = "ضعيفة 🔴";
+        let sigColor = "#ff4757";
+        if (accuracy <= 20) { sigText = "ممتازة 🟢"; sigColor = "#00ff88"; }
+        else if (accuracy <= 50) { sigText = "جيدة 🟡"; sigColor = "#FFD700"; }
+        
+        document.getElementById('signal-strength').textContent = sigText;
+        document.getElementById('signal-strength').style.color = sigColor;
+        document.getElementById('accuracy-val').textContent = `(±${Math.round(accuracy)}م)`;
+
         const currentPos = [latitude, longitude];
         
-        // استخدام الأيقونة النقية
+        // رسم النقطة الآمنة والمضمونة (L.circleMarker)
         if (!window.userMarker) {
-            window.userMarker = L.marker(currentPos, { icon: getMarkerIcon('#00ff88'), zIndexOffset: 1000 }).addTo(map);
+            window.userMarker = L.circleMarker(currentPos, {
+                radius: 8,
+                color: '#ffffff',
+                weight: 2,
+                fillColor: '#00ff88',
+                fillOpacity: 1
+            }).addTo(map);
             map.setView(currentPos, 16); 
         } else {
             window.userMarker.setLatLng(currentPos);
-            map.setView(currentPos, map.getZoom()); 
         }
         
         checkZones(latitude, longitude);
@@ -367,7 +364,7 @@
 
         let markerColor = foundZone ? foundZone.color : '#00ff88'; 
         if (window.userMarker) {
-            window.userMarker.setIcon(getMarkerIcon(markerColor));
+            window.userMarker.setStyle({ fillColor: markerColor });
         }
 
         if (foundZone) {
