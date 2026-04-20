@@ -1,447 +1,647 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
-    <title>نظام المراقبة والتتبع المكاني</title>
+    <title>نظام الملاحة الهندسي برو | Road Commission Precision Pro</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.5.0/turf.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.css" />
+    <script src="https://unpkg.com/leaflet-routing-machine@3.2.12/dist/leaflet-routing-machine.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- Geoman for Customization -->
+    <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
+    <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.min.js"></script>
 
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body { margin: 0; padding: 0; height: 100%; width: 100%; overflow: hidden; font-family: 'Segoe UI', Tahoma, sans-serif; background: #0a0a12; color: white; }
-        
-        /* شريط المعلومات العلوي */
-        #top-bar { position: fixed; top: 0; left: 0; right: 0; min-height: 90px; background: rgba(16, 16, 30, 0.95); border-bottom: 2px solid #00b894; z-index: 1000; display: flex; flex-direction: column; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .dashboard { display: flex; justify-content: space-around; align-items: center; flex-wrap: wrap; gap: 8px; }
-        
-        .stat-box { background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(0,184,148,0.3); text-align: center; flex: 1; min-width: 90px; }
-        .stat-label { font-size: 11px; color: #aaa; display: block; margin-bottom: 4px; }
-        .stat-value { font-size: 14px; font-weight: bold; color: #fff; }
-        .stat-sub { font-size: 10px; color: #888; }
-
-        .controls { display: flex; gap: 10px; margin-top: 10px; justify-content: center; flex-wrap: wrap; }
-        .btn { border: none; padding: 10px 25px; border-radius: 25px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.3s; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        #btn-start { background: linear-gradient(135deg, #00b894 0%, #00a085 100%); color: white; }
-        #btn-settings { background: #34495e; color: white; border: 1px solid #576574; }
-        .btn:disabled { background: #00b894; cursor: not-allowed; box-shadow: none; opacity: 0.9; }
-
-        #map-container { position: absolute; top: 135px; left: 0; right: 0; bottom: 0; z-index: 1; }
-        #map { height: 100%; width: 100%; background: #1a1a2e; }
-
-        /* نافذة التنبيهات والمودال */
-        #backdrop { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9998; backdrop-filter: blur(8px); }
-        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 90%; max-width: 420px; background: #161625; padding: 30px; border-radius: 20px; z-index: 9999; text-align: center; border: 1px solid #333; box-shadow: 0 20px 50px rgba(0,0,0,0.7); color: white; }
-        
-        .legal-alert { border: 2px solid #ff4757; animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes slideUp { from { transform: translate(-50%, -20%); opacity: 0; } to { transform: translate(-50%, -50%); opacity: 1; } }
-        
-        .alert-icon { font-size: 55px; margin-bottom: 10px; display: block; }
-        .legal-msg { font-size: 16px; line-height: 1.6; margin: 15px 0; font-weight: 500; white-space: pre-wrap; }
-        .close-btn { background: white; color: #000; padding: 12px 40px; border-radius: 25px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 10px; }
-
-        @keyframes flashRed {
-            0% { box-shadow: 0 0 20px #ff0000; }
-            50% { box-shadow: 0 0 80px #ff0000, inset 0 0 30px #ff0000; }
-            100% { box-shadow: 0 0 20px #ff0000; }
+        :root {
+            --primary: #00d1b2;
+            --secondary: #3273dc;
+            --warning: #ffdd57;
+            --danger: #ff3860;
+            --glow: 0 0 15px rgba(0, 209, 178, 0.4);
+            --glass: rgba(10, 10, 22, 0.85);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --safe-t: env(safe-area-inset-top, 0px);
+            --safe-b: env(safe-area-inset-bottom, 0px);
         }
-        .critical-alert { animation: flashRed 1s infinite !important; border-width: 4px !important; }
 
-        /* إعدادات المناطق */
-        .zones-list { text-align: right; max-height: 300px; overflow-y: auto; margin: 20px 0; padding-right: 10px; }
-        .zone-option { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 15px; padding: 8px; background: rgba(255,255,255,0.05); border-radius: 8px; cursor: pointer; }
-        .zone-option input[type="checkbox"] { transform: scale(1.3); cursor: pointer; accent-color: #00b894; }
-        .zone-color-box { width: 16px; height: 16px; border-radius: 4px; display: inline-block; border: 1px solid rgba(255,255,255,0.5); }
-        .save-settings-btn { background: #00b894; color: white; border: none; padding: 12px 30px; border-radius: 25px; font-weight: bold; cursor: pointer; width: 100%; font-size: 16px; }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            overflow: hidden;
+            font-family: 'Cairo', sans-serif;
+            background: #000;
+            color: white;
+            letter-spacing: -0.2px;
+        }
+
+        /* Mission Critical HUD - Responsive Grid */
+        #hud-top {
+            position: fixed;
+            top: calc(15px + var(--safe-t));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            width: 94%;
+            max-width: 1200px;
+        }
+
+        @media (min-width: 768px) {
+            #hud-top {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (min-width: 1024px) {
+            #hud-top {
+                grid-template-columns: repeat(5, 1fr);
+            }
+        }
+
+        .hud-card {
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid var(--glass-border);
+            border-radius: 22px;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+            transition: all 0.3s;
+        }
+
+        .hud-card i {
+            width: 20px;
+            height: 20px;
+            color: var(--primary);
+        }
+
+        .danger i {
+            color: var(--danger);
+        }
+
+        .val-text {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .val-lbl {
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.4);
+            font-weight: 700;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .val-main {
+            font-size: 17px;
+            font-weight: 900;
+            color: #fff;
+            line-height: 1.2;
+        }
+
+        .val-unit {
+            font-size: 11px;
+            opacity: 0.5;
+            margin-right: 3px;
+            font-weight: 400;
+        }
+
+        /* Engineering Radar Sidebar */
+        #radar-panel {
+            position: fixed;
+            top: 50%;
+            left: 20px;
+            transform: translateY(-50%);
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        @media (max-width: 1023px) {
+            #radar-panel {
+                display: none;
+            }
+        }
+
+        .radar-card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            width: 180px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+        }
+
+        /* Floating Controls Optimized for Touch */
+        #hud-controls {
+            position: fixed;
+            bottom: calc(25px + var(--safe-b));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1001;
+            display: flex;
+            gap: 12px;
+            background: var(--glass);
+            backdrop-filter: blur(30px);
+            padding: 12px;
+            border-radius: 40px;
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            box-shadow: 0 15px 50px rgba(0, 0, 0, 0.8);
+        }
+
+        .btn-hub {
+            border: none;
+            padding: 14px 24px;
+            border-radius: 30px;
+            font-weight: 800;
+            font-size: 14px;
+            font-family: 'Cairo', sans-serif;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            color: white;
+            white-space: nowrap;
+        }
+
+        #btn-start {
+            background: linear-gradient(135deg, #00d1b2, #00a891);
+        }
+
+        #btn-nav {
+            background: linear-gradient(135deg, #3273dc, #1c52a8);
+        }
+
+        #btn-map-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--glass-border);
+        }
+
+        @media (max-width: 600px) {
+            .btn-hub span {
+                display: none;
+            }
+
+            .btn-hub {
+                padding: 14px 18px;
+            }
+        }
+
+        /* Map UI Overlay */
+        #map {
+            height: 100vh;
+            width: 100vw;
+            background: #000;
+        }
+
+        /* Perfection Alert Modal */
+        #backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            backdrop-filter: blur(12px);
+        }
+
+        .lux-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 88%;
+            max-width: 440px;
+            background: linear-gradient(160deg, #1a1a2e, #0f0f1a);
+            padding: 40px;
+            border-radius: 35px;
+            z-index: 2001;
+            text-align: center;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 50px 100px rgba(0, 0, 0, 0.9);
+        }
+
+        /* Regulatory Glow Pulse */
+        #vignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1500;
+            transition: 0.5s;
+        }
+
+        .is-danger #vignette {
+            animation: dangerVignette 2s infinite ease-in-out;
+        }
+
+        @keyframes dangerVignette {
+            0% {
+                box-shadow: inset 0 0 50px rgba(255, 56, 96, 0);
+            }
+
+            50% {
+                box-shadow: inset 0 0 150px rgba(255, 56, 96, 0.5);
+            }
+
+            100% {
+                box-shadow: inset 0 0 50px rgba(255, 56, 96, 0);
+            }
+        }
+
+        .user-dot {
+            width: 18px;
+            height: 18px;
+            background: #fff;
+            border: 4px solid var(--secondary);
+            border-radius: 50%;
+            box-shadow: 0 0 25px var(--secondary);
+            position: relative;
+        }
+
+        .user-dot::after {
+            content: '';
+            position: absolute;
+            inset: -14px;
+            border-radius: 50%;
+            background: var(--secondary);
+            opacity: 0.4;
+            animation: scanPing 1.8s infinite;
+        }
+
+        @keyframes scanPing {
+            from {
+                transform: scale(0.5);
+                opacity: 1;
+            }
+
+            to {
+                transform: scale(3.5);
+                opacity: 0;
+            }
+        }
+
+        #nav-hint {
+            position: fixed;
+            bottom: 105px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--danger);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 20px;
+            z-index: 1002;
+            display: none;
+            font-size: 14px;
+            font-weight: 800;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(255, 56, 96, 0.4);
+        }
+
+        /* Compass Rose Extension */
+        #compass-rose {
+            position: fixed;
+            bottom: 30px;
+            right: 25px;
+            width: 60px;
+            height: 60px;
+            z-index: 1000;
+            border-radius: 50%;
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s;
+        }
+
+        @media (max-width: 767px) {
+            #compass-rose {
+                bottom: 100px;
+            }
+        }
     </style>
 </head>
-<body>
 
-<div id="top-bar">
-    <div class="dashboard">
-        <div class="stat-box"><span class="stat-label">🚀 السرعة</span><span id="speed" class="stat-value">0</span> <span class="stat-sub">كم/س</span></div>
-        <div class="stat-box"><span class="stat-label">📍 الموقع</span><span id="coords-display" class="stat-value" style="font-size: 13px; direction: ltr;">---</span></div>
-        <div class="stat-box"><span class="stat-label">📶 إشارة GPS</span><span id="signal-strength" class="stat-value" style="color:#aaa;">---</span> <span id="accuracy-val" class="stat-sub"></span></div>
-        <div class="stat-box"><span class="stat-label">🎯 المنطقة</span><span id="zone-check" class="stat-value" style="color:#00ff88">منطقة آمنة</span></div>
-        <div class="stat-box"><span class="stat-label">📡 الحالة</span><span id="gps-status" class="stat-value" style="color:#ff4757">غير متصل</span></div>
+<body id="main-body">
+
+    <div id="hud-top">
+        <div class="hud-card">
+            <div class="val-icon"><i data-lucide="zap"></i></div>
+            <div class="val-text">
+                <span class="val-lbl">🚀 السرعة الفورية</span>
+                <div class="val-group"><span id="speed" class="val-main">0</span><span class="val-unit">كم/س</span>
+                </div>
+            </div>
+        </div>
+        <div class="hud-card" id="card-zone">
+            <div class="val-icon"><i data-lucide="shield"></i></div>
+            <div class="val-text">
+                <span class="val-lbl">🛡️ الحالة التنظيمية</span>
+                <span id="zone-check" class="val-main" style="color: var(--primary)">آمن</span>
+            </div>
+        </div>
+        <div class="hud-card">
+            <div class="val-icon"><i data-lucide="compass"></i></div>
+            <div class="val-text">
+                <span class="val-lbl">🧭 المسار الملاحي</span>
+                <span id="heading" class="val-main">---</span>
+            </div>
+        </div>
+        <div class="hud-card">
+            <div class="val-icon"><i data-lucide="activity"></i></div>
+            <div class="val-text">
+                <span class="val-lbl">🌉 جودة البنية</span>
+                <span class="val-main">عالية</span>
+            </div>
+        </div>
+        <div class="hud-card">
+            <div class="val-icon" id="gps-icon"><i data-lucide="satellite"></i></div>
+            <div class="val-text">
+                <span class="val-lbl">🛰️ دقة الإشارة (DOP)</span>
+                <span id="gps-acc" class="val-main">--</span>
+            </div>
+        </div>
     </div>
-    <div class="controls">
-        <button id="btn-start" class="btn">📡 تفعيل تحديد الموقع</button>
-        <button id="btn-settings" class="btn" onclick="openSettings()">⚙️ إعدادات المناطق</button>
+
+    <div id="radar-panel">
+        <div class="radar-card">
+            <span class="val-lbl">🚨 أقرب منطقة خطر</span>
+            <div id="radar-name" style="font-size: 13px; font-weight: 700; color: var(--warning); margin: 5px 0;">--
+            </div>
+            <div id="radar-dist" style="font-size: 24px; font-weight: 900; color: #fff;">0.00</div>
+            <span class="val-unit">كيلومتر</span>
+        </div>
+        <div class="radar-card">
+            <span class="val-lbl">⏳ وقت الاستجابة</span>
+            <div style="font-size: 18px; font-weight: 800; color: var(--primary);">0.2ms</div>
+        </div>
     </div>
-</div>
 
-<div id="backdrop"></div>
+    <div id="compass-rose" id="rose-wrap">
+        <i data-lucide="navigation-2" style="color: var(--danger); width: 30px; height: 30px;"></i>
+    </div>
 
-<div id="legal-modal" class="modal legal-alert">
-    <span class="alert-icon" id="alert-icon-display">⚠️</span>
-    <h3 id="alert-title" style="font-size: 24px; color: #fff; margin-bottom: 5px;">تنبيه تنظيمي</h3>
-    <p id="legal-text" class="legal-msg"></p>
-    <button class="close-btn" onclick="closeAlert()">علم، سألتزم</button>
-</div>
+    <div id="hud-controls">
+        <button id="btn-start" class="btn-hub"><i data-lucide="play-circle"></i><span>بدأ التتبع</span></button>
+        <button id="btn-nav" class="btn-hub"><i data-lucide="navigation"></i><span>ملاحة ذكية</span></button>
+        <button id="btn-map-toggle" class="btn-hub"><i data-lucide="layers"></i><span>الخريطة</span></button>
+    </div>
 
-<div id="settings-modal" class="modal">
-    <h3 style="color: #fff; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">المناطق النشطة</h3>
-    <p style="font-size: 12px; color: #aaa;">لن يتم رسم أو إطلاق تنبيهات للمناطق غير المحددة.</p>
-    <div class="zones-list" id="zones-list-container"></div>
-    <button class="save-settings-btn" onclick="saveSettings()">حفظ وإغلاق</button>
-</div>
+    <div id="nav-hint">نظام الحساب الملاحي مفعل<br><small>اختر وجهتك بعيداً عن المخالفات</small></div>
 
-<div id="map-container"><div id="map"></div></div>
+    <div id="vignette"></div>
+    <div id="backdrop" onclick="closeAlert()"></div>
+    <div id="lux-modal" class="lux-modal">
+        <div style="font-size: 70px; margin-bottom: 25px;" id="alert-ico">🚨</div>
+        <h3 id="alert-title" style="font-size: 26px; font-weight: 900; margin-bottom: 12px; color:#fff;">بروتوكول تحذير
+        </h3>
+        <p id="alert-msg" style="font-size: 17px; opacity: 0.9; line-height: 1.7; margin-bottom: 35px;"></p>
+        <button class="btn-hub"
+            style="background:#fff; color:#000; width:100%; justify-content:center; box-shadow:0 10px 20px rgba(0,0,0,0.3);"
+            onclick="closeAlert()">أقر بالالتزام والامتثال</button>
+    </div>
 
-<script>
-    // قاعدة البيانات الأصلية للمناطق
-    const masterZonesData = [
-        {
-            name: "النطاق الخارجي الأصفر", color: "#FFD700", 
-            msg: "أنت الآن داخل النطاق الخارجي الأصفر. يرجى الانتباه للتنظيمات المبدئية قبل الدخول للمناطق المركزية.",
-            coords: [
-                [21.3114619988825, 40.26186344075736], [21.40202687265225, 40.27494792099847], [21.48579983331219, 40.24095331141512], 
-                [21.64940038404643, 40.44827723336594], [21.684579642463, 40.32089901815964], [21.66459070246338, 40.11539082282715], 
-                [21.69439943431459, 39.9607249550298], [21.54573321256773, 39.7969854069943], [21.54919003026366, 39.6818869810856], 
-                [21.44199252803352, 39.6200097803685], [21.38107485831209, 39.60254743133251], [21.33211026912623, 39.63515048619968], 
-                [21.30277739641977, 39.700517332689], [21.275512673309, 39.75447140988088], [21.27551229202982, 39.75490242031218], 
-                [21.27550906157185, 39.75791990213611], [21.24754742060833, 39.8141673038424], [21.24672795039132, 39.81628799964846], 
-                [21.24590573159184, 39.81840606228526], [21.24506677706235, 39.82347946977858], [21.23138846461335, 39.97914871792759], 
-                [21.3114619988825, 40.26186344075736]
-            ]
-        },
-        { 
-            name: "الوردية الأولى", color: "#F57C00", msg: "نطاق منع نقل غير المصرح لهم. تأكد من حمل التراخيص اللازمة.",
-            coords: [[21.4205663,39.7784752],[21.4391024,39.775042],[21.4397415,39.7606225],[21.4359067,39.7571892],[21.4314325,39.7482628],[21.4298346,39.7444863],[21.4298346,39.7365899],[21.4288759,39.7247452],[21.4248809,39.7189087],[21.4218447,39.709124],[21.4180094,39.6969361],[21.4164113,39.6919579],[21.3799705,39.6969361],[21.3873233,39.7044892],[21.3932373,39.7092957],[21.4053841,39.7183938],[21.4112974,39.7240586],[21.4119366,39.7374482],[21.4114572,39.7444863],[21.4101787,39.7530694],[21.4135348,39.7544426],[21.4143338,39.7630257],[21.4146534,39.7678322],[21.416731,39.774012],[21.4205663,39.7784752]] 
-        },
-        { 
-            name: "الوردية الثانية", color: "#F57C00", msg: "منطقة تتطلب الحصول على تصاريح رسمية لدخولها.",
-            coords: [[21.349931,39.8036451],[21.3467333,39.7954053],[21.349931,39.7802991],[21.3448147,39.7658796],[21.3422565,39.7445936],[21.3422565,39.730174],[21.3435356,39.7116346],[21.3416169,39.6985883],[21.3396982,39.687602],[21.3358608,39.6711225],[21.3320232,39.6628827],[21.3320232,39.654643],[21.3365003,39.6381635],[21.3320232,39.6292371],[21.3173116,39.6402234],[21.2981204,39.6484632],[21.2898034,39.6580762],[21.2866044,39.6697492],[21.2795664,39.6834821],[21.2578106,39.7171277],[21.2334914,39.7377271],[21.2232506,39.75146],[21.2290112,39.774806],[21.2405316,39.8002118],[21.2430916,39.8098249],[21.2430916,39.8228711],[21.2616501,39.8283643],[21.2782868,39.8256177],[21.3013191,39.8180646],[21.3262667,39.8105115],[21.349931,39.8036451]] 
-        },
-        { 
-            name: "الوردية الثالثة", color: "#F57C00", msg: "منطقة مراقبة أمنية: يمنع الوقوف في هذا النطاق.",
-            coords: [[21.3534549,39.8504782],[21.350737,39.8424959],[21.3504973,39.8377752],[21.3512167,39.8328829],[21.3539827,39.8240503],[21.3539266,39.8209214],[21.353231,39.8179642],[21.3496484,39.8044189],[21.3420233,39.8052454],[21.3282721,39.8096228],[21.2968475,39.8193216],[21.2682957,39.8261023],[21.2439782,39.8261023],[21.2279777,39.8254156],[21.2242974,39.8250723],[21.2133358,39.8288489],[21.19109,39.8378611],[21.1795657,39.8458433],[21.1694812,39.8570872],[21.1669199,39.8638678],[21.1669999,39.8734808],[21.1694812,39.878974],[21.1758841,39.8849821],[21.1839674,39.893136],[21.1852479,39.8983717],[21.1858881,39.9043799],[21.188369,39.9092722],[21.1935708,39.9125338],[21.1978121,39.9133063],[21.2018132,39.9121905],[21.2082147,39.9101305],[21.2122155,39.9086714],[21.2140865,39.9083598],[21.2181366,39.9094439],[21.221257,39.9116755],[21.2237373,39.9132204],[21.2276577,39.9139929],[21.2326981,39.9147654],[21.2380583,39.9151945],[21.2441382,39.9156237],[21.2474981,39.9163103],[21.2534977,39.9190569],[21.2573373,39.9219752],[21.2659761,39.9342489],[21.2665666,39.935139],[21.2684862,39.9349673],[21.271495,39.9334765],[21.2766139,39.9306441],[21.286851,39.9239493],[21.2885305,39.9222326],[21.2888504,39.9199152],[21.2877307,39.916997],[21.2873615,39.9150546],[21.2896007,39.9124797],[21.2925291,39.9109888],[21.2942391,39.9102481],[21.2969275,39.9060965],[21.3028357,39.8993476],[21.2999969,39.8793491],[21.3134309,39.8774608],[21.3145103,39.8793061],[21.3158297,39.8769887],[21.3163094,39.8760017],[21.3251846,39.8737271],[21.326224,39.8757013],[21.3251004,39.8751004],[21.3273433,39.8787912],[21.3273433,39.8787053],[21.3408547,39.8614534],[21.3534549,39.8504782]] 
-        },
-        { 
-            name: "الوردية الرابعة", color: "#F57C00", msg: "نطاق تنظيمي خاص: يرجى الالتزام بالمسارات المحددة.",
-            coords: [[21.3768231,39.6915736],[21.3429272,39.7071064],[21.3434134,39.7106172],[21.3435298,39.7114535],[21.3434756,39.7128731],[21.3425379,39.7263627],[21.3424377,39.7341783],[21.3425794,39.7417194],[21.3427933,39.7456146],[21.3430165,39.7476955],[21.3437566,39.7526972],[21.3439753,39.7561032],[21.3443700,39.7608616],[21.3452364,39.7668436],[21.3455672,39.7677304],[21.3477767,39.7736598],[21.3494679,39.7755813],[21.3545090,39.7738075],[21.3741795,39.7658747],[21.3798482,39.7645530],[21.3942631,39.7620645],[21.3996377,39.7611926],[21.4036783,39.7587149],[21.4094647,39.7547994],[21.4101935,39.7517526],[21.4114849,39.7433814],[21.4117082,39.7392697],[21.4117093,39.7353041],[21.4116063,39.7340390],[21.4115296,39.7317470],[21.4114596,39.7305534],[21.4113608,39.7279882],[21.4112776,39.7257227],[21.4112293,39.7244106],[21.4112254,39.7240175],[21.3849936,39.7023201],[21.3798798,39.6968708],[21.3768231,39.6915736]] 
-        },
-        {
-            name: "النطاق الاحمر (مخالفات فورية)", color: "#ff0000",
-            msg: "مخالفة فورية! أنت داخل النطاق الأحمر المحظور، غادر فوراً.",
-            coords: [
-                [21.51577097414043, 39.89780394502168], [21.53261348485238, 39.75571187580298], [21.47325831732579, 39.67469554471128], 
-                [21.41150094976036, 39.67713892574493], [21.36341468151538, 39.67191190533878], [21.32730259062046, 39.66748383181117], 
-                [21.28948613151358, 39.77330118006482], [21.27334085400369, 39.91045171649711], [21.28806702414635, 40.01243928181768], 
-                [21.30885857533626, 40.04117083514495], [21.51577097414043, 39.89780394502168]
-            ]
-        },
-        { 
-            name: "إسكان قوى الأمن", color: "#F57C00", msg: "أنت الآن داخل نطاق إسكان قوى الأمن. يرجى الالتزام بالتعليمات.",
-            coords: [ [21.62277792148566, 39.20608824874515], [21.62018705577081, 39.19657295896057], [21.61139727513645, 39.1993972627275], [21.61414230975821, 39.20861967620993], [21.62277792148566, 39.20608824874515] ] 
-        },
-        { 
-            name: "النطاق الخطر", color: "#ff0000", msg: "أنت الآن داخل النطاق الخطر! أخذ أقصى درجات الحيطة وتقليل السرعة فوراً.",
-            coords: [
-                [21.61315980513245, 39.19946309800559], [21.61314118663266, 39.19947523076321], [21.61309809596615, 39.19950118839947], 
-                [21.61306151952578, 39.1995308039017], [21.6130129899847, 39.19957605879783], [21.6129888313132, 39.19960157042568], 
-                [21.61294047424664, 39.19964074074549], [21.61286821852008, 39.1996993140936], [21.61281994452239, 39.19973266423954], 
-                [21.61279586404817, 39.19974635627273], [21.61274793572666, 39.19979128695137], [21.61272405236071, 39.19981072622462], 
-                [21.61268832931357, 39.19983391098182], [21.6126586566245, 39.19986101121258], [21.61261725907977, 39.19989764665741], 
-                [21.6126054874975, 39.19991895491022], [21.61256440494437, 39.19995525330177], [21.61251186997357, 39.20000666419954], 
-                [21.61247699171266, 39.20004663512645], [21.61244219644181, 39.20007486390037], [21.61239604172528, 39.2001297021238], 
-                [21.61237300528369, 39.20014257168918], [21.61232714396613, 39.20019131732477], [21.61229293215602, 39.20024211625024], 
-                [21.61227590595722, 39.20027029415799], [21.61223629600332, 39.20033969332842], [21.61223068817514, 39.20037011434535], 
-                [21.61221942846041, 39.20040218092632], [21.61221385156167, 39.20044404547394], [21.61221392638966, 39.20048424662729], 
-                [21.61221400126379, 39.20052444573657], [21.61221404414516, 39.20054741662522], [21.61221411976157, 39.20059336871803], 
-                [21.61222545527385, 39.2006246635733], [21.6122368616045, 39.20069048319228], [21.61223694957322, 39.20073070582046], 
-                [21.61225416873407, 39.20083526156242], [21.6122600971125, 39.20093720748629], [21.61226031470497, 39.20100614602325], 
-                [21.61226616437073, 39.20105635507041], [21.6122892540582, 39.20115969710964], [21.6123007888758, 39.20120859568539], 
-                [21.61232945176194, 39.20125325027319], [21.61235256633258, 39.20131671657255], [21.61238148929434, 39.20137310157226], 
-                [21.61239891402862, 39.20140929811466], [21.61250312765582, 39.20146544176497], [21.61259662091739, 39.20150152784851], 
-                [21.61269117150566, 39.20153773664397], [21.61279866556219, 39.20159503122058], [21.61283474953297, 39.2016162261283], 
-                [21.61288870909368, 39.20154464660379], [21.61297300080663, 39.20138242160152], [21.61304576225372, 39.20122783457555], 
-                [21.61307628115839, 39.20117254163905], [21.61312529070232, 39.20108254294951], [21.61316843443717, 39.20098759451869], 
-                [21.61318697881753, 39.2009588228206], [21.61324885450199, 39.20079830998835], [21.61328616088968, 39.20070396190182], 
-                [21.61339934713988, 39.20044278089269], [21.61346969086934, 39.20026425748163], [21.61359850337641, 39.19986483055871], 
-                [21.61364951219627, 39.19970222081336], [21.61374592883863, 39.19943842380075], [21.61378449334779, 39.19929037997539], 
-                [21.61380361362461, 39.19921638296336], [21.61381014413304, 39.19920186871823], [21.61315980513245, 39.19946309800559]
-            ]
-        }
-    ];
+    <div id="map"></div>
 
-    let activeZones = masterZonesData.map(z => z.name);
-    
-    let polygonsLayer = L.layerGroup();
-    let map = L.map('map', { zoomControl: false, attributionControl: false }).setView([21.4, 39.8], 10);
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
-    polygonsLayer.addTo(map);
+    <script>
+        lucide.createIcons();
 
-    function renderZones() {
-        polygonsLayer.clearLayers();
-        masterZonesData.forEach(z => {
-            if (activeZones.includes(z.name)) {
-                let fillOp = 0.15;
-                let borderWeight = 2;
-                if (z.color === "#ff0000") {
-                    fillOp = 0.25; 
-                    borderWeight = 3;
-                } else if (z.color === "#FFD700") {
-                    fillOp = 0.08; 
-                }
-                L.polygon(z.coords, { color: z.color, fillOpacity: fillOp, weight: borderWeight }).addTo(polygonsLayer).bindPopup(z.name);
+        const zonesData = [
+            {
+                name: "النطاق الخارجي", color: "#FFD700",
+                msg: "أنت الآن داخل النطاق الأصفر التحذيري. يرجى مراعاة اللوائح المرورية العامة.",
+                coords: [[21.3114619988825, 40.26186344075736], [21.40202687265225, 40.27494792099847], [21.48579983331219, 40.24095331141512], [21.64940038404643, 40.44827723336594], [21.684579642463, 40.32089901815964], [21.66459070246338, 40.11539082282715], [21.69439943431459, 39.9607249550298], [21.54573321256773, 39.7969854069943], [21.54919003026366, 39.6818869810856], [21.44199252803352, 39.6200097803685], [21.38107485831209, 39.60254743133251], [21.33211026912623, 39.63515048619968], [21.30277739641977, 39.700517332689], [21.275512673309, 39.75447140988088], [21.27551229202982, 39.75490242031218], [21.27550906157185, 39.75791990213611], [21.24754742060833, 39.8141673038424], [21.24672795039132, 39.81628799964846], [21.24590573159184, 39.81840606228526], [21.24506677706235, 39.82347946977858], [21.23138846461335, 39.97914871792759], [21.3114619988825, 40.26186344075736]]
+            },
+            {
+                name: "النطاق الاحمر", color: "#ff3860",
+                msg: "تحذير: دخول النطاق المحظور أمنياً. غادر المنطقة فوراً لتفادي المخالفات والتبعات القانونية.",
+                coords: [[21.51577097414043, 39.89780394502168], [21.53261348485238, 39.75571187580298], [21.47325831732579, 39.67469554471128], [21.41150094976036, 39.67713892574493], [21.36341468151538, 39.67191190533878], [21.32730259062046, 39.66748383181117], [21.28948613151358, 39.77330118006482], [21.27334085400369, 39.91045171649711], [21.28806702414635, 40.01243928181768], [21.30885857533626, 40.04117083514495], [21.51577097414043, 39.89780394502168]]
             }
-        });
-    }
-    
-    renderZones();
+        ];
 
-    function initSettingsModal() {
-        const container = document.getElementById('zones-list-container');
-        container.innerHTML = '';
-        masterZonesData.forEach(z => {
-            const isChecked = activeZones.includes(z.name) ? 'checked' : '';
-            container.innerHTML += `
-                <label class="zone-option">
-                    <input type="checkbox" value="${z.name}" ${isChecked}>
-                    <span class="zone-color-box" style="background-color: ${z.color};"></span>
-                    ${z.name}
-                </label>
-            `;
-        });
-    }
+        let currentLayer = 'sat';
+        const map = L.map('map', { zoomControl: false, attributionControl: false }).setView([21.4, 39.8], 11);
+        const satLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+        const streetLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png');
 
-    function openSettings() {
-        initSettingsModal();
-        document.getElementById('backdrop').style.display = 'block';
-        document.getElementById('settings-modal').style.display = 'block';
-    }
-
-    function saveSettings() {
-        const checkboxes = document.querySelectorAll('#zones-list-container input[type="checkbox"]');
-        activeZones = []; 
-        checkboxes.forEach(cb => {
-            if (cb.checked) activeZones.push(cb.value);
-        });
-        
-        renderZones();
-        document.getElementById('backdrop').style.display = 'none';
-        document.getElementById('settings-modal').style.display = 'none';
-        
-        if (window.userMarker) {
-            let latlng = window.userMarker.getLatLng();
-            checkZones(latlng.lat, latlng.lng);
-        }
-    }
-
-    let wakeLock = null;
-    let lastAlertZoneName = null;
-    let lastAlertLocation = null;
-    let watchId = null;
-
-    function playAlertSound(isCritical = false) {
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            if (isCritical) {
-                for(let i=0; i<3; i++) {
-                    setTimeout(() => {
-                        let osc = audioCtx.createOscillator();
-                        let gainNode = audioCtx.createGain();
-                        osc.connect(gainNode);
-                        gainNode.connect(audioCtx.destination);
-                        osc.type = 'sawtooth';
-                        osc.frequency.setValueAtTime(600, audioCtx.currentTime);
-                        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
-                        osc.start();
-                        osc.stop(audioCtx.currentTime + 0.15);
-                    }, i * 200);
-                }
-            } else {
-                let osc = audioCtx.createOscillator();
-                let gainNode = audioCtx.createGain();
-                osc.connect(gainNode);
-                gainNode.connect(audioCtx.destination);
-                osc.type = 'square';
-                osc.frequency.setValueAtTime(440, audioCtx.currentTime);
-                gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-                osc.start();
-                osc.stop(audioCtx.currentTime + 0.2);
-            }
-        } catch(e) {}
-    }
-
-    document.getElementById('btn-start').onclick = function() {
-        if (!navigator.geolocation) {
-            alert("GPS غير مدعوم في جهازك أو متصفحك");
-            return;
-        }
-        
-        const btn = this;
-        btn.disabled = true;
-        btn.textContent = "جاري تحديد الموقع...";
-        document.getElementById('gps-status').textContent = "جاري البحث";
-        document.getElementById('gps-status').style.color = '#FFD700';
-
-        if ('wakeLock' in navigator) {
-            navigator.wakeLock.request('screen').then(lock => wakeLock = lock).catch(()=>{});
-        }
-
-        const geoOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
-
-        const handleError = (err) => {
-            console.warn(`ERROR(${err.code}): ${err.message}`);
-            // لا نوقف الزر تماماً حتى نعطي فرصة للـ WatchPosition أن يلتقط الإشارة بعد قليل
-            if(err.code === 1) {
-                btn.disabled = false;
-                btn.textContent = "📡 تفعيل تحديد الموقع";
-                document.getElementById('gps-status').textContent = "مرفوض";
-                document.getElementById('gps-status').style.color = '#ff4757';
-                alert("الرجاء السماح للمتصفح بالوصول إلى موقعك.");
-            } else {
-                document.getElementById('gps-status').textContent = "إشارة ضعيفة";
-                document.getElementById('gps-status').style.color = '#ff4757';
-            }
+        document.getElementById('btn-map-toggle').onclick = () => {
+            if (currentLayer === 'sat') { map.removeLayer(satLayer); streetLayer.addTo(map); currentLayer = 'street'; }
+            else { map.removeLayer(streetLayer); satLayer.addTo(map); currentLayer = 'sat'; }
         };
 
-        // مسح المراقبة القديمة والبدء من جديد
-        if(watchId) navigator.geolocation.clearWatch(watchId);
-        
-        watchId = navigator.geolocation.watchPosition((pos) => {
-            btn.textContent = "مفعل";
-            document.getElementById('gps-status').textContent = "متصل";
-            document.getElementById('gps-status').style.color = '#00ff88';
-            updatePosition(pos);
-        }, handleError, geoOptions);
-    };
+        // Map Layers and Zones Setup
+        const zonesLayer = L.featureGroup().addTo(map);
 
-    function updatePosition(pos) {
-        const { latitude, longitude, speed, heading, accuracy } = pos.coords;
-        const kmh = speed ? (speed * 3.6).toFixed(1) : 0;
-        
-        // تحديث البيانات على الشاشة (السرعة والموقع والإشارة)
-        document.getElementById('speed').textContent = kmh;
-        document.getElementById('coords-display').innerHTML = `<span dir="ltr">${latitude.toFixed(5)}, ${longitude.toFixed(5)}</span>`;
-        document.getElementById('coords-display').style.color = '#fff';
-        
-        let sigText = "ضعيفة 🔴";
-        let sigColor = "#ff4757";
-        if (accuracy <= 20) { sigText = "ممتازة 🟢"; sigColor = "#00ff88"; }
-        else if (accuracy <= 50) { sigText = "جيدة 🟡"; sigColor = "#FFD700"; }
-        
-        document.getElementById('signal-strength').textContent = sigText;
-        document.getElementById('signal-strength').style.color = sigColor;
-        document.getElementById('accuracy-val').textContent = `(±${Math.round(accuracy)}م)`;
+        zonesData.forEach((z, idx) => {
+            const p = L.polygon(z.coords, { color: z.color, fillOpacity: 0.18, weight: 2.5 }).addTo(zonesLayer);
+            p.zoneData = z;
 
-        const currentPos = [latitude, longitude];
-        
-        // رسم النقطة الآمنة والمضمونة (L.circleMarker)
-        if (!window.userMarker) {
-            window.userMarker = L.circleMarker(currentPos, {
-                radius: 8,
-                color: '#ffffff',
-                weight: 2,
-                fillColor: '#00ff88',
-                fillOpacity: 1
-            }).addTo(map);
-            map.setView(currentPos, 16); 
-        } else {
-            window.userMarker.setLatLng(currentPos);
-        }
-        
-        checkZones(latitude, longitude);
-    }
-
-    function checkZones(lat, lng) {
-        let currentLatLng = L.latLng(lat, lng);
-        let foundZone = null;
-        
-        let activeZonesData = masterZonesData.filter(z => activeZones.includes(z.name));
-
-        activeZonesData.forEach(z => {
-            if (isPointInPoly(lat, lng, z.coords)) foundZone = z;
+            // Touch/Click Popup for Categories
+            p.on('click', e => {
+                L.popup().setLatLng(e.latlng).setContent(`<div style="font-family:'Cairo'; text-align:right; min-width:200px;">
+                <h4 style="color:${z.color}; margin-bottom:5px;">${z.name}</h4>
+                <p style="margin:0; font-size:13px; color:#555; line-height:1.4;">${z.msg}</p>
+                <div style="font-size:11px; margin-top:8px; color:gray; opacity:0.8;">الفئة التنظيمية: ${idx}</div>
+            </div>`).openOn(map);
+                L.DomEvent.stopPropagation(e);
+            });
         });
 
-        const label = document.getElementById('zone-check');
-        const alertIcon = document.getElementById('alert-icon-display');
-        const modal = document.getElementById('legal-modal');
+        // Geoman Control for Editing Zones
+        map.pm.addControls({
+            position: 'topleft', drawCircle: false, drawMarker: false,
+            drawCircleMarker: false, drawPolyline: false, drawRectangle: false,
+            drawPolygon: true, drawText: false, editMode: true, dragMode: true,
+            cutPolygon: false, removalMode: true
+        });
 
-        let markerColor = foundZone ? foundZone.color : '#00ff88'; 
-        if (window.userMarker) {
-            window.userMarker.setStyle({ fillColor: markerColor });
-        }
+        map.on('pm:create', e => {
+            const l = e.layer;
+            const nz = {
+                name: "منطقة مخصصة (تحذير)", color: "#ffdd57",
+                msg: "منطقة محظورة تم تحديدها يدوياً بواسطة المهندس.",
+                coords: l.getLatLngs()[0].map(c => [c.lat, c.lng])
+            };
+            l.zoneData = nz; l.setStyle({ color: nz.color, fillOpacity: 0.18, weight: 2.5 });
 
-        if (foundZone) {
-            label.textContent = foundZone.name;
-            label.style.color = foundZone.color;
-            
-            let shouldShowAlert = false;
-            
-            if (lastAlertZoneName !== foundZone.name) {
-                shouldShowAlert = true;
-            } else if (lastAlertLocation) {
-                let distanceMeters = currentLatLng.distanceTo(lastAlertLocation);
-                if (distanceMeters >= 5000) {
-                    shouldShowAlert = true;
-                }
+            l.on('click', evt => {
+                L.popup().setLatLng(evt.latlng).setContent(`<div style="font-family:'Cairo'; text-align:right;">
+                <h4 style="color:${nz.color}; margin-bottom:5px;">${nz.name}</h4>
+                <p style="margin:0; font-size:13px; color:#555;">${nz.msg}</p>
+            </div>`).openOn(map);
+                L.DomEvent.stopPropagation(evt);
+            });
+
+            zonesData.push(nz); l.addTo(zonesLayer);
+        });
+
+        zonesLayer.on('pm:edit', e => {
+            if (e.layer.zoneData) {
+                e.layer.zoneData.coords = e.layer.getLatLngs()[0].map(c => [c.lat, c.lng]);
             }
+        });
 
-            if (shouldShowAlert) {
-                lastAlertZoneName = foundZone.name;
-                lastAlertLocation = currentLatLng; 
-                
-                let isCritical = (foundZone.color === "#ff0000");
-                playAlertSound(isCritical);
-                
-                if (isCritical) {
-                    alertIcon.textContent = "🚨";
-                    modal.classList.add('critical-alert');
-                    document.getElementById('alert-title').textContent = "تحذير أمني عالي";
-                    document.getElementById('alert-title').style.color = "#ff0000";
-                } else {
-                    alertIcon.textContent = "⚠️";
-                    modal.classList.remove('critical-alert');
-                    document.getElementById('alert-title').textContent = "تنبيه تنظيمي";
-                    document.getElementById('alert-title').style.color = "#fff";
-                }
-                
-                showLegalAlert(foundZone.msg, foundZone.color, isCritical);
+        let navMode = false; let routingControl = null; let destMark = null; let lastZ = null; let audioInited = false;
+
+        function initAudio() { if (!audioInited) { const c = new (window.AudioContext || window.webkitAudioContext)(); c.resume(); audioInited = true; } }
+
+        function playBell(t = 'i') {
+            const c = new (window.AudioContext || window.webkitAudioContext)();
+            const m = c.createGain(); m.connect(c.destination); m.gain.setValueAtTime(0.2, c.currentTime);
+            if (t === 'd') {
+                const o = c.createOscillator(); o.connect(m); o.type = 'sine'; o.frequency.setValueAtTime(300, c.currentTime);
+                o.frequency.exponentialRampToValueAtTime(150, c.currentTime + 1); o.start(); o.stop(c.currentTime + 1);
+            } else {
+                [523, 659, 783].forEach((f, i) => {
+                    const o = c.createOscillator(); const g = c.createGain(); o.connect(g).connect(m);
+                    o.frequency.setValueAtTime(f, c.currentTime + i * 0.1); g.gain.setValueAtTime(0.3, c.currentTime + i * 0.1);
+                    g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + i * 0.1 + 0.4); o.start(c.currentTime + i * 0.1); o.stop(c.currentTime + i * 0.1 + 0.4);
+                });
             }
-        } else {
-            label.textContent = "منطقة آمنة";
-            label.style.color = "#00ff88";
-            lastAlertZoneName = null; 
         }
-    }
 
-    function isPointInPoly(lat, lng, poly) {
-        let inside = false;
-        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-            let xi = poly[i][0], yi = poly[i][1], xj = poly[j][0], yj = poly[j][1];
-            if (((yi > lng) != (yj > lng)) && (lat < (xj - xi) * (lng - yi) / (yj - yi) + xi)) inside = !inside;
+        document.getElementById('btn-start').onclick = function () {
+            initAudio();
+            this.disabled = true;
+            document.getElementById('gps-icon').style.color = 'var(--primary)';
+            navigator.geolocation.watchPosition(pos => {
+                const { latitude, longitude, speed, heading, accuracy } = pos.coords;
+                document.getElementById('speed').textContent = speed ? (speed * 3.6).toFixed(0) : 0;
+                document.getElementById('heading').textContent = heading ? heading.toFixed(0) + "°" : "---";
+                document.getElementById('gps-acc').textContent = (accuracy / 10).toFixed(1);
+                if (heading) document.getElementById('compass-rose').style.transform = `rotate(${heading}deg)`;
+
+                const latlng = [latitude, longitude];
+                if (!window.uM) window.uM = L.marker(latlng, { icon: L.divIcon({ className: 'u', html: '<div class="user-dot"></div>', iconSize: [20, 20], iconAnchor: [10, 10] }) }).addTo(map);
+                else window.uM.setLatLng(latlng);
+
+                if (!navMode && !routingControl) map.flyTo(latlng, 16);
+                checkZones(latitude, longitude);
+                runRadar(latitude, longitude);
+            }, null, { enableHighAccuracy: true });
+            playBell();
+        };
+
+        function checkZones(la, ln) {
+            let f = zonesData.find(z => isP(la, ln, z.coords));
+            const lbl = document.getElementById('zone-check'); const b = document.getElementById('main-body');
+            if (f) {
+                lbl.textContent = f.name; lbl.style.color = f.color;
+                if (lastZ !== f.name) {
+                    lastZ = f.name;
+                    if (f.color === "#ff3860") { b.classList.add('is-danger'); showModal("بروتوكول تحذير", f.msg, "🚨"); playBell('d'); }
+                    else { b.classList.remove('is-danger'); showModal("تنبيه تنظيمي", f.msg, "⚠️"); playBell('i'); }
+                }
+            } else { lbl.textContent = "نطاق آمن"; lbl.style.color = "var(--primary)"; b.classList.remove('is-danger'); lastZ = null; }
         }
-        return inside;
-    }
 
-    function showLegalAlert(text, color, isCritical) {
-        document.getElementById('backdrop').style.display = 'block';
-        const modal = document.getElementById('legal-modal');
-        modal.style.display = 'block';
-        
-        if(isCritical) {
-            modal.style.borderColor = '#ff0000';
-            modal.style.background = `linear-gradient(135deg, rgba(255,0,0,0.3) 0%, rgba(16,16,30,0.95) 100%)`;
-        } else {
-            modal.style.borderColor = color;
-            modal.style.background = `linear-gradient(135deg, ${color}33 0%, rgba(16,16,30,0.95) 100%)`;
+        function runRadar(la, ln) {
+            const p = turf.point([ln, la]); let md = Infinity; let mn = "--";
+            zonesData.forEach(z => {
+                let cs = z.coords.map(c => [c[1], c[0]]); cs.push(cs[0]);
+                let d = turf.distance(p, turf.pointOnFeature(turf.polygon([cs])));
+                if (d < md) { md = d; mn = z.name; }
+            });
+            document.getElementById('radar-dist').textContent = md.toFixed(2);
+            document.getElementById('radar-name').textContent = mn;
         }
-        
-        document.getElementById('legal-text').textContent = text;
-    }
 
-    function closeAlert() {
-        document.getElementById('backdrop').style.display = 'none';
-        document.getElementById('legal-modal').style.display = 'none';
-        document.getElementById('settings-modal').style.display = 'none';
-        const modal = document.getElementById('legal-modal');
-        modal.classList.remove('critical-alert');
-    }
-</script>
+        function isP(la, ln, py) {
+            let i = false; for (let a = 0, b = py.length - 1; a < py.length; b = a++) {
+                if (((py[a][1] > ln) != (py[b][1] > ln)) && (la < (py[b][0] - py[a][0]) * (ln - py[a][1]) / (py[b][1] - py[a][1]) + py[a][0])) i = !i;
+            } return i;
+        }
+
+        function showModal(t, m, e) {
+            document.getElementById('alert-title').textContent = t; document.getElementById('alert-msg').textContent = m;
+            document.getElementById('alert-ico').textContent = e;
+            document.getElementById('backdrop').style.display = 'block'; document.getElementById('lux-modal').style.display = 'block';
+        }
+
+        function closeAlert() { document.getElementById('backdrop').style.display = 'none'; document.getElementById('lux-modal').style.display = 'none'; }
+
+        document.getElementById('btn-nav').onclick = () => { if (!window.uM) return alert("ابدأ التتبع!"); navMode = true; document.getElementById('nav-hint').style.display = 'block'; };
+
+        map.on('click', e => {
+            if (!navMode) return;
+            if (zonesData.some(z => z.color === "#ff3860" && isP(e.latlng.lat, e.latlng.lng, z.coords))) return showModal("خطأ ملاحي", "الوجهة تقع في منطقة محظورة.", "🚫");
+            if (destMark) map.removeLayer(destMark); destMark = L.marker(e.latlng).addTo(map);
+            document.getElementById('nav-hint').style.display = 'none'; navMode = false;
+            if (routingControl) map.removeControl(routingControl);
+            const s = window.uM.getLatLng();
+            const detour = calcD(s, e.latlng);
+            routingControl = L.Routing.control({
+                waypoints: detour.w, router: L.Routing.osrmv1({ serviceUrl: 'https://router.project-osrm.org/route/v1' }),
+                lineOptions: { styles: [{ color: '#00d1b2', weight: 6, dashArray: '5, 12' }] },
+                show: false, createMarker: () => null
+            }).addTo(map);
+        });
+
+        function calcD(s, e) {
+            const sp = turf.point([s.lng, s.lat]); const ep = turf.point([e.lng, e.lat]);
+            const l = turf.lineString([sp.geometry.coordinates, ep.geometry.coordinates]);
+            let ws = [];
+            zonesData.filter(z => z.color === "#ff3860" || z.name.includes("مخصصة")).forEach(z => {
+                if (!z.coords || z.coords.length < 3) return;
+                let cs = z.coords.map(c => [c[1], c[0]]); cs.push(cs[0]);
+                let py = turf.polygon([cs]);
+                if (turf.booleanIntersects(l, py)) {
+                    let b = turf.buffer(turf.convex(turf.featureCollection([py])), 5, { units: 'kilometers' });
+                    let r = b.geometry.coordinates[0];
+
+                    // Superior Detour Algorithm: Find 3 anchor points on the buffer
+                    let ms = Infinity; let bi = 0;
+                    r.forEach((p, i) => {
+                        let d = turf.distance(sp, turf.point(p)) + turf.distance(ep, turf.point(p));
+                        if (d < ms) { ms = d; bi = i; }
+                    });
+
+                    // Pick points along the perimeter to ensure road adherence
+                    let st = Math.max(1, Math.floor(r.length / 8));
+                    let p1 = r[(bi - st + r.length) % r.length];
+                    let p2 = r[bi];
+                    let p3 = r[(bi + st) % r.length];
+
+                    if (turf.distance(sp, turf.point(p1)) < turf.distance(sp, turf.point(p3))) {
+                        ws.push(L.latLng(p1[1], p1[0])); ws.push(L.latLng(p2[1], p2[0])); ws.push(L.latLng(p3[1], p3[0]));
+                    } else {
+                        ws.push(L.latLng(p3[1], p3[0])); ws.push(L.latLng(p2[1], p2[0])); ws.push(L.latLng(p1[1], p1[0]));
+                    }
+                }
+            });
+            return { w: [s, ...ws, e] };
+        }
+    </script>
 </body>
+
 </html>
