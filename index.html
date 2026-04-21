@@ -762,18 +762,25 @@
         };
 
         function updatePosition(pos) {
-            const { latitude, longitude, speed, heading, accuracy } = pos.coords;
+            let { latitude, longitude, speed, heading, accuracy } = pos.coords;
             
-            // تهيئة الفلتر بأول قيمة حقيقية لتجنب القفزة البطيئة من الصفر
+            // تجاهل الإحداثيات الصفرية أو غير المنطقية التي قد يرسلها المتصفح في البداية
+            if (latitude === 0 && longitude === 0) return;
+
+            // في أول نقطة، نتجاوز الفلتر تماماً لضمان القفز للموقع الحقيقي فوراَ
             if (!filtersSeeded) {
                 latFilter.x = latitude;
                 lngFilter.x = longitude;
                 filtersSeeded = true;
+                
+                // قفزة صلبة فورية للكاميرا
+                map.setView([latitude, longitude], 16);
             }
 
-            // تطبيق فلتر كالمان لتنعيم الموقع
+            // تطبيق فلتر كالمان لتنعيم الموقع (للنقاط اللاحقة)
             const sLat = latFilter.filter(latitude);
             const sLng = lngFilter.filter(longitude);
+
 
             
             const kmh = speed ? (speed * 3.6).toFixed(0) : 0;
@@ -807,10 +814,9 @@
 
             if (!window.uM) {
                 window.uM = L.marker(currentPos, { icon: getMarkerIcon('#00d1b2'), zIndexOffset: 1000 }).addTo(map);
-                map.setView(currentPos, 16);
             } else {
                 window.uM.setLatLng(currentPos);
-                // تحديث سريع للموقع بدون أنيميشن ثقيل لزيادة الاستجابة
+                // تحديث سريع للموقع بدون أنيميشن
                 map.panTo(currentPos, { animate: false });
             }
 
