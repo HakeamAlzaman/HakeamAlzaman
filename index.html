@@ -864,12 +864,12 @@
                         b.classList.add('is-red-alert');
                         showModal("تحذير أمني عالي", f.msg, "🚨");
                         playBell('red');
-                        speak("تحذير خطر، لقد أنت الان في النطاق الأحمر .");
+                        speak("تحذير خطر أنت الان في النطاق الأحمر.");
                     } else if (f.color === "#F57C00") {
                         b.classList.add('is-yellow-alert');
                         showModal("تنبيه تنظيمي", f.msg, "⚠️");
                         playBell('orange');
-                        speak("تنبيه، أنت الآن داخل النطاق البرتقالي التنظيمي.");
+                        speak("تنبيه، أنت الآن في النطاق البرتقالي التنظيمي.");
                     } else {
                         b.classList.add('is-yellow-alert');
                         showModal("تنبيه تنظيمي", f.msg, "⚠️");
