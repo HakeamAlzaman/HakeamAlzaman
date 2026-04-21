@@ -499,7 +499,9 @@
         }
         const latFilter = new KalmanFilter(0.05, 0.1);
         const lngFilter = new KalmanFilter(0.05, 0.1);
+        let filtersSeeded = false; // لتهيئة الفلاتر بأول إحداثيات حقيقية
         let lastSpeakTime = 0;
+
 
         // مصفوفة النطاقات التنظيمية المدمجة
         const zonesData = [
@@ -762,9 +764,17 @@
         function updatePosition(pos) {
             const { latitude, longitude, speed, heading, accuracy } = pos.coords;
             
+            // تهيئة الفلتر بأول قيمة حقيقية لتجنب القفزة البطيئة من الصفر
+            if (!filtersSeeded) {
+                latFilter.x = latitude;
+                lngFilter.x = longitude;
+                filtersSeeded = true;
+            }
+
             // تطبيق فلتر كالمان لتنعيم الموقع
             const sLat = latFilter.filter(latitude);
             const sLng = lngFilter.filter(longitude);
+
             
             const kmh = speed ? (speed * 3.6).toFixed(0) : 0;
             const currentPos = [sLat, sLng];
@@ -804,9 +814,9 @@
                 map.panTo(currentPos, { animate: false });
             }
 
-            // تنفيذ العمليات الثقيلة (Radar/Zones) مرة واحدة كل ثانية لضمان سلاسة الأداء
+            // تنفيذ العمليات الثقيلة (Radar/Zones) بسرعة أكبر (كل 300 مللي ثانية) لزيادة الاستجابة
             const now = Date.now();
-            if (now - lastLogicExecution > 1000) {
+            if (now - lastLogicExecution > 300) {
                 checkZones(sLat, sLng, kmh);
                 runRadar(sLat, sLng, kmh);
                 lastLogicExecution = now;
