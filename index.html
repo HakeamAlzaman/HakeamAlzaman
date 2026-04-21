@@ -600,7 +600,12 @@
         let watchId = null;
         let lastProximityKm = -1;
         let alertNotifTimeout = null;
-        let lastLogicExecution = 0; // لجدولة العمليات الثقيلة برمجياً
+        let lastLogicExecution = 0; 
+        
+        // نظام استقرار الموقع لتجنب التنبيهات الخاطئة عند التشغيل
+        let locationPointsCount = 0;
+        let isLocationStable = false;
+
 
 
         // خوارزمية منع قفل الشاشة القوية
@@ -780,8 +785,14 @@
             if (heading !== null && heading !== undefined) {
                 document.getElementById('compass-arrow').style.transform = `rotate(${heading}deg)`;
                 document.getElementById('compass-arrow').style.color = 'var(--primary)';
-                // تدوير الخريطة نفسها (Heading Up)
                 map.setBearing(heading);
+            }
+
+            // تحديث حالة استقرار الموقع (يشترط دقة أفضل من 30 متر وتلقي 3 إشارات على الأقل)
+            locationPointsCount++;
+            if (!isLocationStable && accuracy <= 30 && locationPointsCount >= 3) {
+                isLocationStable = true;
+                console.log("Location signal stabilized.");
             }
 
             if (!window.uM) {
@@ -814,6 +825,9 @@
 
             if (f) {
                 lbl.textContent = f.name; lbl.style.color = f.color;
+
+                // لا يتم إطلاق التنبيهات حتى يستقر الموقع
+                if (!isLocationStable) return;
 
                 let shouldAlert = false;
                 if (lastZ !== f.name) {
@@ -867,7 +881,11 @@
             document.getElementById('radar-dist').style.color = color;
             document.getElementById('radar-name').textContent = mz.name;
 
+            // لا يتم إطلاق تنبيهات الرادار حتى يستقر الموقع
+            if (!isLocationStable) return;
+
             // حساب مسافة التنبيه الذكية بناءً على السرعة (الحد الأدنى 2كم، ويزداد مع السرعة)
+
             const alertThreshold = Math.max(2, (kmh / 20) * 2); 
 
             if (md <= alertThreshold) {
