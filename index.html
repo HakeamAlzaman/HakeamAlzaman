@@ -595,20 +595,28 @@
                 m.gain.setValueAtTime(0.2, c.currentTime);
 
                 if (type === 'red') {
-                    // صوت "مزعج" ويدل على أهمية قصوى (سرينة نبضية)
-                    for (let i = 0; i < 8; i++) {
-                        const o = c.createOscillator();
-                        const g = c.createGain();
-                        o.connect(g).connect(m);
-                        o.type = 'sawtooth';
-                        // تردد متناوب بين الحاد والأكثر حدة
-                        const freq = (i % 2 === 0) ? 987.77 : 1318.51; // B5 to E6
-                        o.frequency.setValueAtTime(freq, c.currentTime + i * 0.15);
-                        g.gain.setValueAtTime(0.4, c.currentTime + i * 0.15);
-                        g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + i * 0.15 + 0.12);
-                        o.start(c.currentTime + i * 0.15);
-                        o.stop(c.currentTime + i * 0.15 + 0.12);
-                    }
+                    // صافرة إنذار قوية ( Pitch Sliding Siren )
+                    const o = c.createOscillator();
+                    const g = c.createGain();
+                    o.connect(g).connect(m);
+                    o.type = 'sawtooth';
+                    
+                    const now = c.currentTime;
+                    o.frequency.setValueAtTime(300, now);
+                    
+                    // محاكاة صعود ونزول الصافرة لمرتين (مدة 2 ثانية)
+                    o.frequency.exponentialRampToValueAtTime(1200, now + 0.5);
+                    o.frequency.exponentialRampToValueAtTime(300, now + 1.0);
+                    o.frequency.exponentialRampToValueAtTime(1200, now + 1.5);
+                    o.frequency.exponentialRampToValueAtTime(300, now + 2.0);
+                    
+                    g.gain.setValueAtTime(0, now);
+                    g.gain.linearRampToValueAtTime(0.6, now + 0.1);
+                    g.gain.setValueAtTime(0.6, now + 1.9);
+                    g.gain.linearRampToValueAtTime(0, now + 2.0);
+
+                    o.start(now);
+                    o.stop(now + 2.0);
                 } else if (type === 'orange') {
                     // صوت يدل على الأهمية (نغمتان متتاليتان واضحتان)
                     [880, 880].forEach((f, i) => {
