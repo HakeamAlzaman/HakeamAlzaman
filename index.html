@@ -73,9 +73,10 @@
 
         @media (min-width: 1024px) {
             #hud-top {
-                grid-template-columns: repeat(5, 1fr);
+                grid-template-columns: repeat(6, 1fr);
             }
         }
+
 
         .hud-card {
             background: var(--glass);
@@ -124,6 +125,18 @@
             margin-right: 4px;
             font-weight: 600;
         }
+
+        /* تنبيه تجاوز السرعة */
+        .is-over-speed {
+            background: rgba(255, 56, 96, 0.4) !important;
+            border-color: #ff3860 !important;
+            animation: speed-pulse 0.8s infinite alternate;
+        }
+        @keyframes speed-pulse {
+            from { transform: scale(1); box-shadow: 0 0 10px #ff3860; }
+            to { transform: scale(1.03); box-shadow: 0 0 25px #ff3860; }
+        }
+
 
         /* الرادار الجانبي */
         #radar-panel {
@@ -399,14 +412,23 @@
 <body id="main-body">
 
     <div id="hud-top">
-        <div class="hud-card">
+        <div class="hud-card" id="card-speed">
             <div class="val-icon"><i data-lucide="zap"></i></div>
             <div class="val-text">
-                <span class="val-lbl">السرعة الفورية</span>
+                <span class="val-lbl">السرعة الحالية</span>
                 <div class="val-group"><span id="speed" class="val-main">0</span><span class="val-unit">كم/س</span>
                 </div>
             </div>
         </div>
+        <div class="hud-card">
+            <div class="val-icon"><i data-lucide="gauge"></i></div>
+            <div class="val-text">
+                <span class="val-lbl">سرعة الطريق</span>
+                <div class="val-group"><span id="road-speed-val" class="val-main" style="font-size: 14px;">---</span>
+                </div>
+            </div>
+        </div>
+
         <div class="hud-card">
             <div class="val-icon"><i data-lucide="map-pin"></i></div>
             <div class="val-text">
@@ -608,6 +630,12 @@
         let locationPointsCount = 0;
         let isLocationStable = false;
 
+        // ميزات السرعة الطريق
+        let currentRoadSpeedLimit = null;
+        let lastSpeedFetchPos = null;
+        let lastSpeedAlertTime = 0;
+
+
 
 
         // خوارزمية منع قفل الشاشة القوية
@@ -712,7 +740,40 @@
             } catch (e) { }
         }
 
-        // إزالة الـ Service Worker لأنه لم يعد مطلوباً في نسخة الملف الواحد
+        // دالة جلب سرعة الطريق من قاعدة بيانات مفتوحة
+        async function fetchRoadSpeed(la, ln) {
+            try {
+                // البحث عن أقرب طريق في نطاق 50 متر يحتوي على وسم السرعة القصوى
+                const q = `[out:json];way(around:50, ${la}, ${ln})["maxspeed"];out tags;`;
+                const r = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(q)}`);
+                const d = await r.json();
+                
+                // البحث عن عنصر يحتوي على تاق السرعة
+                const way = d.elements.find(e => e.tags && e.tags.maxspeed);
+                if (way) {
+                    let s = parseInt(way.tags.maxspeed);
+                    currentRoadSpeedLimit = isNaN(s) ? null : s;
+                } else {
+                    currentRoadSpeedLimit = null;
+                }
+                updateRoadSpeedUI();
+            } catch (e) {
+                console.error("Speed API Error:", e);
+                currentRoadSpeedLimit = null;
+                updateRoadSpeedUI();
+            }
+        }
+
+        function updateRoadSpeedUI() {
+            const el = document.getElementById('road-speed-val');
+            if (currentRoadSpeedLimit) {
+                el.textContent = currentRoadSpeedLimit + " كم/س";
+                el.style.color = "#fff";
+            } else {
+                el.textContent = "سرعة غير موثقة";
+                el.style.color = "rgba(255,255,255,0.5)";
+            }
+        }
 
 
         document.getElementById('btn-start').onclick = function () {
@@ -789,6 +850,28 @@
             document.getElementById('speed').textContent = kmh;
             document.getElementById('coords-display').innerHTML = `${sLat.toFixed(5)}, ${sLng.toFixed(5)}`;
             document.getElementById('heading').textContent = heading ? heading.toFixed(0) + "°" : "---";
+
+            // فحص تجاوز السرعة والتنبيه
+            const speedCard = document.getElementById('card-speed');
+            if (currentRoadSpeedLimit && kmh > currentRoadSpeedLimit) {
+                speedCard.classList.add('is-over-speed');
+                
+                // تنبيه صوتي كل 30 ثانية لتجنب الإزعاج
+                const nowTime = Date.now();
+                if (nowTime - lastSpeedAlertTime > 30000) {
+                    speak("لقد تجاوزت السرعة المسموحة", true);
+                    lastSpeedAlertTime = nowTime;
+                }
+            } else {
+                speedCard.classList.remove('is-over-speed');
+            }
+
+            // تحديث سرعة الطريق عند التحرك لمسافة كافية (150 متر)
+            const currentLatLng = L.latLng(sLat, sLng);
+            if (!lastSpeedFetchPos || currentLatLng.distanceTo(lastSpeedFetchPos) > 150) {
+                fetchRoadSpeed(sLat, sLng);
+                lastSpeedFetchPos = currentLatLng;
+            }
 
             let sigText = "ضعيفة";
             let sigColor = "var(--danger)";
