@@ -788,9 +788,9 @@
                 map.setBearing(heading);
             }
 
-            // تحديث حالة استقرار الموقع (يشترط دقة أفضل من 30 متر وتلقي 3 إشارات على الأقل)
+            // تحديث حالة استقرار الموقع (يشترط دقة أفضل من 20 متر وتلقي 10 إشارات على الأقل)
             locationPointsCount++;
-            if (!isLocationStable && accuracy <= 30 && locationPointsCount >= 3) {
+            if (!isLocationStable && accuracy > 0 && accuracy <= 20 && locationPointsCount >= 10) {
                 isLocationStable = true;
                 console.log("Location signal stabilized.");
             }
@@ -820,15 +820,17 @@
             let currentLatLng = L.latLng(la, ln);
 
             // تحديث لون النقطة (السيارة) لتطابق النطاق
-            let dotColor = f ? f.color : '#00d1b2';
+            let dotColor = (f && isLocationStable) ? f.color : '#00d1b2';
             if (window.uM) window.uM.setIcon(getMarkerIcon(dotColor));
+
+            if (!isLocationStable) {
+                lbl.textContent = "جاري تثبيت الإشارة..."; 
+                lbl.style.color = "var(--warning)";
+                return;
+            }
 
             if (f) {
                 lbl.textContent = f.name; lbl.style.color = f.color;
-
-                // لا يتم إطلاق التنبيهات حتى يستقر الموقع
-                if (!isLocationStable) return;
-
                 let shouldAlert = false;
                 if (lastZ !== f.name) {
                     shouldAlert = true;
