@@ -588,25 +588,62 @@
         function playBell(type = 'info') {
             try {
                 const c = new (window.AudioContext || window.webkitAudioContext)();
-                const m = c.createGain(); m.connect(c.destination); m.gain.setValueAtTime(0.2, c.currentTime);
-                if (type === 'danger') {
-                    const o = c.createOscillator(); o.connect(m); o.type = 'sine'; o.frequency.setValueAtTime(300, c.currentTime);
-                    o.frequency.exponentialRampToValueAtTime(150, c.currentTime + 1); o.start(); o.stop(c.currentTime + 1);
-                } else if (type === 'alarm') {
-                    // صوت تنبيه "مزعج" عالي التردد ونبضي 
-                    for (let i = 0; i < 5; i++) {
-                        const o = c.createOscillator(); const g = c.createGain(); 
-                        o.connect(g).connect(m); o.type = 'sawtooth';
-                        o.frequency.setValueAtTime(880, c.currentTime + i * 0.4);
-                        g.gain.setValueAtTime(0.3, c.currentTime + i * 0.4);
-                        g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + i * 0.4 + 0.3);
-                        o.start(c.currentTime + i * 0.4); o.stop(c.currentTime + i * 0.4 + 0.3);
+                if (c.state === 'suspended') c.resume();
+                
+                const m = c.createGain();
+                m.connect(c.destination);
+                m.gain.setValueAtTime(0.2, c.currentTime);
+
+                if (type === 'red') {
+                    // صوت "مزعج" ويدل على أهمية قصوى (سرينة نبضية)
+                    for (let i = 0; i < 8; i++) {
+                        const o = c.createOscillator();
+                        const g = c.createGain();
+                        o.connect(g).connect(m);
+                        o.type = 'sawtooth';
+                        // تردد متناوب بين الحاد والأكثر حدة
+                        const freq = (i % 2 === 0) ? 987.77 : 1318.51; // B5 to E6
+                        o.frequency.setValueAtTime(freq, c.currentTime + i * 0.15);
+                        g.gain.setValueAtTime(0.4, c.currentTime + i * 0.15);
+                        g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + i * 0.15 + 0.12);
+                        o.start(c.currentTime + i * 0.15);
+                        o.stop(c.currentTime + i * 0.15 + 0.12);
                     }
+                } else if (type === 'orange') {
+                    // صوت يدل على الأهمية (نغمتان متتاليتان واضحتان)
+                    [880, 880].forEach((f, i) => {
+                        const o = c.createOscillator();
+                        const g = c.createGain();
+                        o.connect(g).connect(m);
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(f, c.currentTime + i * 0.2);
+                        g.gain.setValueAtTime(0.3, c.currentTime + i * 0.2);
+                        g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + i * 0.2 + 0.15);
+                        o.start(c.currentTime + i * 0.2);
+                        o.stop(c.currentTime + i * 0.2 + 0.15);
+                    });
+                } else if (type === 'yellow') {
+                    // صوت تحذيري مبدئي واضح (نغمة واحدة نقية)
+                    const o = c.createOscillator();
+                    const g = c.createGain();
+                    o.connect(g).connect(m);
+                    o.type = 'sine';
+                    o.frequency.setValueAtTime(659.25, c.currentTime); // E5
+                    g.gain.setValueAtTime(0.3, c.currentTime);
+                    g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + 0.3);
+                    o.start(c.currentTime);
+                    o.stop(c.currentTime + 0.3);
                 } else {
+                    // نغمة إرشادية خفيفة
                     [523, 659, 783].forEach((f, i) => {
-                        const o = c.createOscillator(); const g = c.createGain(); o.connect(g).connect(m);
-                        o.frequency.setValueAtTime(f, c.currentTime + i * 0.1); g.gain.setValueAtTime(0.3, c.currentTime + i * 0.1);
-                        g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + i * 0.1 + 0.4); o.start(c.currentTime + i * 0.1); o.stop(c.currentTime + i * 0.1 + 0.4);
+                        const o = c.createOscillator();
+                        const g = c.createGain();
+                        o.connect(g).connect(m);
+                        o.frequency.setValueAtTime(f, c.currentTime + i * 0.1);
+                        g.gain.setValueAtTime(0.2, c.currentTime + i * 0.1);
+                        g.gain.exponentialRampToValueAtTime(0.01, c.currentTime + i * 0.1 + 0.4);
+                        o.start(c.currentTime + i * 0.1);
+                        o.stop(c.currentTime + i * 0.1 + 0.4);
                     });
                 }
             } catch (e) { }
@@ -724,12 +761,15 @@
                     if (f.color === "#ff3860") {
                         b.classList.add('is-red-alert');
                         showModal("تحذير أمني عالي", f.msg, "🚨");
-                        playBell('danger');
-                    } else {
-                        // النطاق البرتقالي أو الأصفر
+                        playBell('red');
+                    } else if (f.color === "#F57C00") {
                         b.classList.add('is-yellow-alert');
                         showModal("تنبيه تنظيمي", f.msg, "⚠️");
-                        playBell('info');
+                        playBell('orange');
+                    } else {
+                        b.classList.add('is-yellow-alert');
+                        showModal("تنبيه تنظيمي", f.msg, "⚠️");
+                        playBell('yellow');
                     }
                 }
             } else {
@@ -762,13 +802,14 @@
                     const alertMsg = `أنت على بعد ${currentKm === 0 ? "أقل من 1" : currentKm} كم من ${mz.name}`;
 
                     if (mz.color === "#ff3860") {
-                        // النطاق الأحمر: تنبيه عالي الأولوية (نافذة منبثقة + صوت مزعج)
                         showModal("تحذير اقتراب خطر", alertMsg, "🚨");
-                        playBell('alarm');
-                    } else {
-                        // النطاقات الأخرى: تنبيه HUD خفيف (يختفي بعد 15 ثانية)
+                        playBell('red');
+                    } else if (mz.color === "#F57C00") {
                         showHUDNotification(alertMsg);
-                        playBell('info');
+                        playBell('orange');
+                    } else {
+                        showHUDNotification(alertMsg);
+                        playBell('yellow');
                     }
                 }
             } else {
