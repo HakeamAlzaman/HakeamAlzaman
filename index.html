@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 
 <head>
-    <title>Precision Pro Navigation | HUD</title>
+    <title>Precision Pro Navigation | Mobile HUD</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
@@ -16,238 +16,173 @@
             --primary: #00f2ff;
             --danger: #ff0044;
             --warning: #ffcc00;
-            --bg: #131720;
-            --panel-bg: rgba(30, 35, 45, 0.7);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --text-main: #ffffff;
-            --text-dim: rgba(255, 255, 255, 0.6);
+            --orange: #f57c00;
+            --bg: #0a0c10;
+            --panel: rgba(20, 25, 35, 0.85);
+            --border: rgba(255, 255, 255, 0.1);
+            --text: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.5);
         }
 
         body, html {
             margin: 0; padding: 0; height: 100%; overflow: hidden;
-            font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text-main);
+            font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text);
         }
 
-        .app-container {
-            display: flex; flex-direction: column; height: 100vh;
-            padding: 15px; box-sizing: border-box; gap: 15px;
+        .hud-header {
+            position: fixed; top: 0; left: 0; right: 0; z-index: 2000;
+            padding: 10px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+            pointer-events: none;
         }
-
-        .top-header { display: flex; flex-direction: column; gap: 15px; z-index: 10; }
-
-        .top-bar { display: flex; justify-content: space-between; align-items: center; }
-
-        .left-actions { display: flex; gap: 8px; align-items: center; }
-
-        .action-btn {
-            background: var(--panel-bg); border: 1px solid var(--glass-border);
-            border-radius: 12px; padding: 8px 14px; color: var(--text-main);
-            font-family: 'Cairo'; font-size: 13px; display: flex; align-items: center;
-            gap: 6px; cursor: pointer; backdrop-filter: blur(10px); transition: 0.3s;
-        }
-        .action-btn:hover { background: rgba(255, 255, 255, 0.1); }
-        .action-btn.active-tracking { background: var(--primary); color: #000; border-color: var(--primary); font-weight: 900; }
-
-        .logo-box { display: flex; align-items: center; gap: 8px; }
-        .logo-text { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
-        .logo-en { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; }
-        .logo-ar { font-size: 10px; color: var(--text-dim); }
-        .logo-icon { color: var(--primary); width: 28px; height: 28px; filter: drop-shadow(0 0 5px var(--primary)); }
-
-        #hud-top { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
         .hud-card {
-            background: var(--panel-bg); backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border); border-radius: 14px;
-            padding: 12px; display: flex; align-items: center; justify-content: center;
-            gap: 10px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); position: relative;
+            background: var(--panel); backdrop-filter: blur(25px);
+            border: 1px solid var(--border); border-radius: 12px;
+            padding: 10px; display: flex; align-items: center; gap: 10px;
+            pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.4);
         }
 
-        .hud-icon { color: var(--primary); width: 24px; height: 24px; filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.3)); }
+        .hud-label { font-size: 10px; color: var(--text-dim); font-weight: 700; }
+        .hud-val { font-size: 13px; font-weight: 800; }
 
-        .hud-val-box { display: flex; flex-direction: column; }
-        .hud-label { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
-        .hud-main-val { font-size: 14px; font-weight: 900; }
-
-        .speed-gauge { position: relative; width: 65px; height: 65px; }
+        .speed-box { position: relative; width: 50px; height: 50px; flex-shrink: 0; }
         .gauge-svg { transform: rotate(135deg); width: 100%; height: 100%; }
-        .gauge-bg { fill: none; stroke: rgba(255, 255, 255, 0.05); stroke-width: 5; stroke-dasharray: 165 220; }
-        .gauge-progress { 
-            fill: none; stroke: var(--primary); stroke-width: 5; stroke-linecap: round;
-            stroke-dasharray: 165 220; stroke-dashoffset: 165; transition: stroke-dashoffset 0.4s ease;
-            filter: drop-shadow(0 0 5px var(--primary));
+        .gauge-bg { fill: none; stroke: rgba(255,255,255,0.1); stroke-width: 4; stroke-dasharray: 165 220; }
+        .gauge-bar { fill: none; stroke: var(--primary); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 165 220; stroke-dashoffset: 165; transition: 0.4s; }
+        .speed-num { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; }
+
+        .speed-limit { width: 34px; height: 34px; border: 2px solid #cc0000; border-radius: 50%; background: #fff; color: #cc0000; font-size: 13px; font-weight: 900; display: flex; align-items: center; justify-content: center; }
+
+        .controls {
+            position: fixed; top: 120px; left: 10px; z-index: 2000;
+            display: flex; flex-direction: column; gap: 8px;
         }
-        .speed-text-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .speed-number { font-size: 22px; font-weight: 900; color: var(--primary); line-height: 1; }
+        .btn-pill {
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 30px; padding: 6px 14px; color: #fff;
+            font-size: 11px; font-weight: 900; display: flex; align-items: center; gap: 6px;
+            cursor: pointer; backdrop-filter: blur(10px);
+        }
+        .btn-start { background: var(--primary); color: #000; border: none; }
+        .btn-permit.auth { border-color: var(--primary); color: var(--primary); }
+        .btn-permit.no-auth { border-color: var(--danger); color: var(--danger); }
 
-        .map-container { flex: 1; position: relative; border-radius: 20px; overflow: hidden; border: 1px solid var(--glass-border); }
-
-        #map { position: absolute; inset: 0; z-index: 0; }
+        .map-box { position: absolute; inset: 0; z-index: 1; }
+        #map { height: 100%; width: 100%; }
 
         #search-box {
-            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; width: 350px; max-width: 90%;
+            position: fixed; bottom: 130px; left: 50%; transform: translateX(-50%);
+            z-index: 2000; width: 90%; max-width: 400px;
         }
-        .search-input {
-            width: 100%; background: var(--panel-bg); border: 1px solid var(--glass-border);
-            border-radius: 30px; padding: 10px 15px 10px 42px; color: #fff;
-            font-family: 'Cairo'; font-size: 13px; outline: none; backdrop-filter: blur(15px);
+        .search-in {
+            width: 100%; background: var(--panel); border: 1px solid var(--border);
+            border-radius: 25px; padding: 12px 45px 12px 20px; color: #fff;
+            font-size: 13px; outline: none; backdrop-filter: blur(15px);
         }
-        .search-ic { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-dim); width: 18px; }
+        .search-ic { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: var(--primary); width: 18px; }
 
-        #nav-card {
-            position: absolute; right: 15px; top: 15px; z-index: 1000;
-            width: 250px; background: var(--panel-bg); border: 1px solid var(--glass-border);
-            border-radius: 16px; padding: 15px; display: none; backdrop-filter: blur(20px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6); animation: slideIn 0.4s ease;
+        #nav-info {
+            position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+            z-index: 2000; width: 90%; max-width: 400px;
+            background: var(--panel); border: 1px solid var(--border);
+            border-radius: 18px; padding: 15px; display: none; backdrop-filter: blur(30px);
         }
 
-        #vignette { position: absolute; inset: 0; pointer-events: none; z-index: 1500; transition: 0.5s; }
-        .red-alert #vignette { animation: flashRed 1.5s infinite; }
-        @keyframes flashRed { 0%, 100% { box-shadow: inset 0 0 50px rgba(255, 0, 68, 0); } 50% { box-shadow: inset 0 0 150px rgba(255, 0, 68, 0.4); } }
+        #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 1500; transition: 0.5s; }
+        .red-alert #vignette { animation: flash 1.5s infinite; }
+        @keyframes flash { 0%, 100% { box-shadow: inset 0 0 50px rgba(255,0,68,0); } 50% { box-shadow: inset 0 0 150px rgba(255,0,68,0.4); } }
 
-        .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
-            z-index: 3000; backdrop-filter: blur(10px); align-items: center; justify-content: center;
-        }
-        .modal { background: #111; border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; width: 350px; text-align: center; }
+        .modal-ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; backdrop-filter: blur(10px); align-items: center; justify-content: center; padding: 20px; }
+        .modal { background: #111; border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-align: center; width: 100%; max-width: 350px; }
 
-        .user-marker { width: 20px; height: 20px; background: #fff; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--primary); }
-        .user-marker::after { content: ''; position: absolute; inset: -12px; background: var(--primary); opacity: 0.15; border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
+        .user-dot { width: 18px; height: 18px; background: #fff; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--primary); position: relative; }
+        .user-dot::after { content: ''; position: absolute; inset: -12px; background: var(--primary); opacity: 0.2; border-radius: 50%; animation: p 2s infinite; }
+        @keyframes p { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
 
-        .speed-limit-badge {
-            width: 45px; height: 45px; border-radius: 50%; border: 3px solid #fff;
-            background: #fff; color: #cc0000; font-weight: 900; font-size: 15px;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            box-shadow: 0 0 0 2px #cc0000;
-        }
-        .speed-limit-badge small { font-size: 7px; color: #333; }
-        .speed-over .speed-number { color: var(--danger) !important; animation: blink 0.6s infinite; }
-        @keyframes blink { 50% { opacity: 0.4; } }
-
-        [dir="rtl"] .search-input { padding: 10px 42px 10px 15px; }
-        [dir="rtl"] .search-ic { right: 15px; left: auto; }
-
-        @media (max-width: 900px) {
-            #hud-top { grid-template-columns: repeat(2, 1fr); }
-            .logo-ar { display: none; }
-        }
-        @media (max-width: 600px) {
-            .app-container { padding: 8px; gap: 8px; }
-            #hud-top { gap: 8px; }
-            .hud-card { padding: 10px; }
-            .hud-main-val { font-size: 12px; }
-            .speed-gauge { width: 55px; height: 55px; }
-            .speed-number { font-size: 18px; }
-            #search-box { width: 95%; top: 10px; }
-            #nav-card { width: 90%; right: 5%; top: auto; bottom: 20px; transform: none; }
-            .action-btn span { font-size: 11px; }
-        }
+        @media (max-width: 380px) { .hud-header { grid-template-columns: 1fr; } .controls { top: 160px; } }
     </style>
 </head>
 
 <body>
 
-    <div class="app-container">
-        <header class="top-header">
-            <div class="top-bar">
-                <div class="left-actions">
-                    <button class="action-btn" id="start-btn" onclick="startTracking()" style="background: var(--primary); color: #000; font-weight: 900;">
-                        <i data-lucide="play" style="width:14px"></i>
-                        <span>تفعيل التتبع</span>
-                    </button>
-                    <button class="action-btn" id="permit-btn" onclick="togglePermit()" style="border-color:var(--danger)">
-                        <i id="permit-icon" data-lucide="shield-alert" style="color:var(--danger); width:14px"></i>
-                        <span id="permit-label" style="color:var(--danger)">غير مصرح</span>
-                    </button>
-                </div>
-                <div class="logo-box">
-                    <div class="logo-text">
-                        <span class="logo-en">PRECISION PRO</span>
-                        <span class="logo-ar">بريسيشن برو</span>
-                    </div>
-                    <i data-lucide="shield-check" class="logo-icon"></i>
-                </div>
+    <div class="hud-header">
+        <div class="hud-card">
+            <div class="speed-box">
+                <svg class="gauge-svg" viewBox="0 0 80 80">
+                    <circle class="gauge-bg" cx="40" cy="40" r="35"></circle>
+                    <circle id="speed-bar" class="gauge-bar" cx="40" cy="40" r="35"></circle>
+                </svg>
+                <div class="speed-num" id="speed-val">0</div>
             </div>
-
-            <div id="hud-top">
-                <div class="hud-card">
-                    <i data-lucide="satellite" class="hud-icon"></i>
-                    <div class="hud-val-box">
-                        <span class="hud-label">الإشارة</span>
-                        <span id="gps-status" class="hud-main-val">بانتظار GPS</span>
-                    </div>
-                </div>
-
-                <div class="hud-card">
-                    <i data-lucide="shield" class="hud-icon"></i>
-                    <div class="hud-val-box">
-                        <span class="hud-label">النطاق</span>
-                        <span id="zone-name" class="hud-main-val" style="color: var(--primary)">آمن</span>
-                    </div>
-                </div>
-
-                <div class="hud-card">
-                    <div class="hud-val-box" style="direction: ltr; text-align: left;">
-                        <span class="hud-label">الإحداثيات</span>
-                        <span id="coords-n" class="hud-main-val">0.0000° N</span>
-                        <span id="coords-e" class="hud-main-val">0.0000° E</span>
-                    </div>
-                </div>
-
-                <div class="hud-card" id="speed-card">
-                    <div class="speed-gauge">
-                        <svg class="gauge-svg" viewBox="0 0 80 80">
-                            <circle class="gauge-bg" cx="40" cy="40" r="35"></circle>
-                            <circle id="speed-ring" class="gauge-progress" cx="40" cy="40" r="35"></circle>
-                        </svg>
-                        <div class="speed-text-center">
-                            <span class="speed-number" id="speed-val">0</span>
-                        </div>
-                    </div>
-                    <div class="speed-limit-badge" id="speed-limit-badge">
-                        <span id="speed-limit-val">--</span>
-                        <small>حد</small>
-                    </div>
-                </div>
+            <div class="speed-limit">
+                <span id="limit-val">--</span>
             </div>
-        </header>
-
-        <main class="map-container">
-            <div id="map"></div>
-            <div id="vignette"></div>
-            <div id="search-box">
-                <input type="text" id="destination-input" class="search-input" placeholder="ابحث عن وجهة..." onkeydown="handleSearch(event)">
-                <i data-lucide="search" class="search-ic"></i>
+            <div class="hud-val-box">
+                <span class="hud-label">النطاق</span>
+                <span id="zone-name" class="hud-val" style="color: var(--primary)">آمن</span>
             </div>
-            <div id="nav-card">
-                <div id="dest-name" style="font-weight:900; color:var(--primary); margin-bottom:10px">---</div>
-                <div style="font-size:12px; opacity:0.8">
-                    المسافة: <span id="nav-km">---</span> | الوصول: <span id="nav-min">---</span>
-                </div>
+        </div>
+        <div class="hud-card">
+            <i data-lucide="map-pin" style="color: var(--primary); width: 18px;"></i>
+            <div class="hud-val-box">
+                <span id="coord-n" class="hud-val" style="direction: ltr; font-size: 11px;">0.0000° N</span>
+                <span id="coord-e" class="hud-val" style="direction: ltr; font-size: 11px;">0.0000° E</span>
             </div>
-        </main>
+            <div style="flex: 1; text-align: left;"><i data-lucide="satellite" style="width: 14px; opacity: 0.5;"></i></div>
+        </div>
     </div>
 
-    <div id="modal-overlay" class="modal-overlay">
+    <div class="controls">
+        <button id="start-btn" class="btn-pill btn-start" onclick="startTracking()">
+            <i data-lucide="play" style="width:14px"></i><span>تفعيل التتبع</span>
+        </button>
+        <button id="permit-btn" class="btn-pill btn-permit no-auth" onclick="togglePermit()">
+            <i id="permit-icon" data-lucide="shield-alert" style="width:14px"></i><span id="permit-label">غير مصرح</span>
+        </button>
+    </div>
+
+    <div class="map-box"><div id="map"></div><div id="vignette"></div></div>
+
+    <div id="search-box">
+        <input type="text" id="dest-in" class="search-in" placeholder="ابحث عن وجهة..." onkeydown="handleSearch(event)">
+        <i data-lucide="search" class="search-ic"></i>
+    </div>
+
+    <div id="nav-info">
+        <div id="dest-title" style="font-weight:900; color:var(--primary); font-size: 16px; margin-bottom:10px">---</div>
+        <div style="display: flex; justify-content: space-between; font-size: 13px; opacity: 0.9;">
+            <span>المسافة: <b id="nav-km">---</b></span><span>الوصول: <b id="nav-min">---</b></span>
+        </div>
+    </div>
+
+    <div id="modal-ov" class="modal-ov">
         <div class="modal">
             <div style="font-size: 50px; margin-bottom: 20px;">🚨</div>
-            <h2 id="modal-title" style="margin-bottom: 15px; font-weight: 900;">تحذير أمني</h2>
-            <p id="modal-body" style="opacity: 0.8; line-height: 1.6; margin-bottom: 30px;"></p>
-            <button onclick="closeModal()" style="background: var(--primary); color: #000; border: none; padding: 12px 40px; border-radius: 12px; font-weight: 900; cursor: pointer;">موافق</button>
+            <h2 id="modal-t" style="margin-bottom: 15px; font-weight: 900;">تحذير أمني</h2>
+            <p id="modal-b" style="opacity: 0.8; line-height: 1.6; margin-bottom: 30px;"></p>
+            <button onclick="closeModal()" style="background: var(--primary); color: #000; border: none; padding: 12px 40px; border-radius: 12px; font-weight: 900; cursor: pointer; width: 100%;">موافق</button>
         </div>
     </div>
 
     <script>
-        let map, userMarker, targetMarker, routePolyline;
-        let isAuthorized = false, currentPos = null, lastAlertTime = 0, currentSpeedLimit = null;
+        let map, userMarker, targetMarker, routePath;
+        let isAuth = false, pos = null, lastAlert = 0;
 
         const zonesData = [
             {
                 name: "النطاق الأحمر (محظور)", color: "#ff3860",
-                msg: "⚠️ منطقة محظورة أمنياً. يرجى الانسحاب فوراً.",
-                coords: [[20.7015, 39.7455], [20.8211, 39.8381], [20.8394, 39.8482], [20.8436, 39.8879], [21.0258, 39.8699], [21.1165, 39.9144], [21.1456, 39.9230], [21.1956, 39.9397], [21.2941, 40.0710], [21.3378, 40.1866], [21.3370, 40.2659], [21.3613, 40.2679], [21.3617, 40.2683], [21.3618, 40.2686], [21.3709, 40.2658], [21.5372, 40.2847], [21.5523, 40.3267], [21.6214, 40.3904], [21.6628, 40.3989], [21.6421, 40.3272], [21.6345, 40.2868], [21.6350, 40.2452], [21.6306, 40.2232], [21.6310, 40.1911], [21.6183, 40.1682], [21.6213, 40.1439], [21.6098, 40.1109], [21.6393, 40.0948], [21.6589, 40.0681], [21.6569, 40.0231], [21.6690, 39.9894], [21.7050, 39.9725], [21.6857, 39.9288], [21.6819, 39.9065], [21.6924, 39.9005], [21.6924, 39.8717], [21.6779, 39.8581], [21.7094, 39.8170], [21.7241, 39.7876], [21.7155, 39.7573], [21.6822, 39.7271], [21.6319, 39.7012], [21.6420, 39.6564], [21.6541, 39.6305], [21.6824, 39.5614], [21.6756, 39.5592], [21.5886, 39.5309], [21.5054, 39.6010], [21.4626, 39.5605], [21.3376, 39.5516], [21.2825, 39.5582], [21.2601, 39.5623], [21.1619, 39.5988], [21.1244, 39.5923], [21.0425, 39.5902], [20.9793, 39.5715], [20.8335, 39.6396], [20.7015, 39.7455]]
+                msg: "⚠️ منطقة محظورة أمنياً فقط المصرح لهم بدخول العاصمة المقدسة يمكنهم الدخول لها سيتم ايقاع مخالفة فورية",
+                coords: [[20.70150004379111, 39.74547620336583], [20.82109614701648, 39.83809601155372], [20.83942963736666, 39.84817340618953], [20.8436289141557, 39.88789178251207], [21.02580573547771, 39.86988112915366], [21.11647395240314, 39.91435018363975], [21.14557431973176, 39.92299252707362], [21.19564857117273, 39.93972288634575], [21.29405747843474, 40.07104446548749], [21.3377569063467, 40.18661339598307], [21.33695978005598, 40.26586873699659], [21.36126911758232, 40.26786290209701], [21.36168455283478, 40.26832486450851], [21.36176451338503, 40.2686036573539], [21.37087199213354, 40.2658301371425], [21.53723573992467, 40.28466763611192], [21.5523173013468, 40.32672919101677], [21.62142296855228, 40.39035396870963], [21.66275679466926, 40.39890770259256], [21.64208949646057, 40.32718557803213], [21.63451087917093, 40.28680337464734], [21.63501578261253, 40.24523782516165], [21.6305886618192, 40.22316227567907], [21.63097080100261, 40.19113492422682], [21.61833360372991, 40.16815219794162], [21.62129267814695, 40.14394064339548], [21.60978109906645, 40.11092653081775], [21.63933394202724, 40.0948339572515], [21.65891723092306, 40.06808737849082], [21.65693010933428, 40.02307213107491], [21.66898206918071, 39.98939145695884], [21.70502418716606, 39.97247295067518], [21.6856900280856, 39.9288486509768], [21.68192509457498, 39.90646452469439], [21.6924265048853, 39.90049407694579], [21.69239123399441, 39.87165004084191], [21.6778727601981, 39.8580730627732], [21.70943090991979, 39.81698582924813], [21.72405565394661, 39.7876250868062], [21.71546404404157, 39.75733172336524], [21.68219747764469, 39.72714100576981], [21.6318683680729, 39.70122897382493], [21.64195233727379, 39.65644338811498], [21.65409346112042, 39.63051766291512], [21.68237560652928, 39.56142486229131], [21.67555017484882, 39.55920640858917], [21.58857829305702, 39.53085155474616], [21.50537978260742, 39.60100781368336], [21.46255883710861, 39.56051291491933], [21.33755649367083, 39.5516446168989], [21.28248708406367, 39.55816772870512], [21.26014982272355, 39.56232345063864], [21.1619489109048, 39.59882249987461], [21.12437164068065, 39.59234747259856], [21.04247391859231, 39.59018913017329], [20.97934165519455, 39.57148349581971], [20.83352138967588, 39.63960181368336], [20.70150004379111, 39.74547620336583]]
+            },
+            {
+                name: "النطاق البرتقالي (تنظيمي)", color: "#f57c00",
+                msg: "⚠️ تحذير اخير أنت تقترب من منطقة منظمة أمنيا و مروريا سيتم ايقاع مخالفات فورية عند وصولك للنطاق الاحمر",
+                coords: [[20.98402711391964, 40.20613532007761], [21.26255936858587, 40.40796584894989], [21.46319246084477, 40.5047016780823], [21.63114168312575, 40.46365063993856], [21.66990218212499, 40.48478184745079], [21.72174035851783, 40.48300556775168], [21.81509101032648, 39.91284660561679], [21.81611630115141, 39.88036606724239], [21.82377238543744, 39.82629359477693], [21.82395412209036, 39.81815407082109], [21.82455436304772, 39.80187290614962], [21.75341086205644, 39.55263111353519], [21.60516125046864, 39.49881280333808], [21.18176156176088, 39.53963460610744], [20.96967317014618, 39.5482560914313], [20.68340715846817, 39.70535490369484], [20.76892942543596, 40.02836696499121], [20.98402711391964, 40.20613532007761]]
+            },
+            {
+                name: "النطاق الأصفر (تحذيري)", color: "#ffcc00",
+                msg: "تحذير أنت تقترب من منطقة منظمة أمنيا و مروريا الرجاء توخي الاحاطة و الحذر",
+                coords: [[21.95144101986097, 39.79747233590614], [21.94973676349665, 39.78194062900019], [21.94970279523987, 39.76797233797541], [21.94980913420406, 39.75555372101563], [21.94993388245003, 39.74623749553317], [21.94260264331843, 39.71538284511906], [21.93507241988767, 39.70323613827328], [21.92749895364211, 39.69578282772083], [21.91756364666963, 39.68079837559202], [21.91259603855427, 39.67488195021906], [21.90520762063649, 39.66452345298082], [21.89533067926305, 39.65587872182157], [21.88561037636605, 39.64275399274819], [21.86961209118672, 39.62707280416645], [21.86497404095424, 39.62585643246457], [21.85821517320545, 39.62027711230245], [21.76134263428975, 39.46141279626785], [21.56674569393956, 39.4724082128771], [21.4089179339024, 39.44880280178614], [21.23853045583137, 39.47688905951601], [21.1427777605944, 39.50093476452514], [20.80395992402174, 39.55009872902003], [20.64134754766426, 39.70566464474572], [20.74109316617669, 40.05124729923209], [21.03333053156665, 40.4207273266706], [21.68381990064168, 40.873678781964], [21.95144101986097, 39.79747233590614]]
             }
         ];
 
@@ -261,17 +196,15 @@
         }
 
         function togglePermit() {
-            isAuthorized = !isAuthorized;
+            isAuth = !isAuth;
             const btn = document.getElementById('permit-btn');
             const icon = document.getElementById('permit-icon');
             const label = document.getElementById('permit-label');
-            btn.style.borderColor = isAuthorized ? 'var(--primary)' : 'var(--danger)';
-            icon.setAttribute('data-lucide', isAuthorized ? 'shield-check' : 'shield-alert');
-            icon.style.color = isAuthorized ? 'var(--primary)' : 'var(--danger)';
-            label.innerText = isAuthorized ? 'مصرح' : 'غير مصرح';
-            label.style.color = isAuthorized ? 'var(--primary)' : 'var(--danger)';
+            btn.className = `btn-pill btn-permit ${isAuth ? 'auth' : 'no-auth'}`;
+            icon.setAttribute('data-lucide', isAuth ? 'shield-check' : 'shield-alert');
+            label.innerText = isAuth ? 'مصرح' : 'غير مصرح';
             lucide.createIcons();
-            speak(isAuthorized ? "تم تفعيل التصريح" : "تم إلغاء التصريح");
+            speak(isAuth ? "تم تفعيل التصريح" : "تم إلغاء التصريح");
             if (targetMarker) updateRoute(targetMarker.getLatLng());
         }
 
@@ -279,64 +212,62 @@
             if (e.key === 'Enter') {
                 const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(e.target.value)}&limit=1`);
                 const data = await res.json();
-                if (data.length > 0) setDestination([parseFloat(data[0].lat), parseFloat(data[0].lon)], data[0].display_name);
+                if (data.length > 0) setTarget([parseFloat(data[0].lat), parseFloat(data[0].lon)], data[0].display_name);
             }
         }
 
-        function setDestination(coords, name) {
+        function setTarget(coords, name) {
             if (targetMarker) map.removeLayer(targetMarker);
-            targetMarker = L.marker(coords).addTo(map);
-            document.getElementById('nav-card').style.display = 'block';
-            document.getElementById('dest-name').innerText = name.split(',')[0];
+            targetMarker = L.marker(coords, { icon: L.divIcon({ html: '<i data-lucide="map-pin" style="color:var(--danger); fill:var(--danger)"></i>', className: '' }) }).addTo(map);
+            document.getElementById('nav-info').style.display = 'block';
+            document.getElementById('dest-title').innerText = name.split(',')[0];
+            lucide.createIcons();
             updateRoute(coords);
         }
 
         async function updateRoute(dest) {
-            if (!currentPos) return;
-            const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${currentPos[1]},${currentPos[0]};${dest[1] ? dest[1] : dest.lng},${dest[0] ? dest[0] : dest.lat}?overview=full&geometries=geojson&alternatives=3`);
+            if (!pos) return;
+            const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${pos[1]},${pos[0]};${dest.lng || dest[1]},${dest.lat || dest[0]}?overview=full&geometries=geojson&alternatives=true`);
             const data = await res.json();
             if (data.routes && data.routes.length > 0) {
                 let r = data.routes[0];
-                if (!isAuthorized) {
+                if (!isAuth) {
                     const safe = data.routes.find(rt => !checkPathDanger(rt.geometry));
-                    if (safe) r = safe; else speak("تنبيه: المسار يمر عبر منطقة محظورة");
+                    if (safe) r = safe; else speak("تحذير: المسار يمر عبر منطقة محظورة");
                 }
-                if (routePolyline) map.removeLayer(routePolyline);
-                routePolyline = L.geoJSON(r.geometry, { style: { color: !isAuthorized && checkPathDanger(r.geometry) ? 'var(--danger)' : 'var(--primary)', weight: 6, opacity: 0.7 } }).addTo(map);
+                if (routePath) map.removeLayer(routePath);
+                const dangerous = checkPathDanger(r.geometry);
+                routePath = L.geoJSON(r.geometry, { style: { color: dangerous && !isAuth ? 'var(--danger)' : 'var(--primary)', weight: 6, opacity: 0.8 } }).addTo(map);
                 document.getElementById('nav-km').innerText = (r.distance / 1000).toFixed(1) + ' كم';
                 document.getElementById('nav-min').innerText = Math.round(r.duration / 60) + ' د';
-                map.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
+                map.fitBounds(routePath.getBounds(), { padding: [60, 60] });
             }
         }
 
         function checkPathDanger(routeGeo) {
-            for (const z of zonesData) {
-                const poly = turf.polygon([z.coords.map(c => [c[1], c[0]]).concat([[z.coords[0][1], z.coords[0][0]]])]);
-                if (turf.booleanIntersects(routeGeo, poly)) return true;
-            }
-            return false;
+            const red = zonesData.find(z => z.color === "#ff3860");
+            const poly = turf.polygon([red.coords.map(c => [c[1], c[0]]).concat([[red.coords[0][1], red.coords[0][0]]])]);
+            return turf.booleanIntersects(routeGeo, poly);
         }
 
         function startTracking() {
-            document.getElementById('start-btn').classList.add('active-tracking');
-            document.getElementById('start-btn').innerHTML = '<i data-lucide="refresh-cw" style="width:14px"></i><span>تحديث الموقع</span>';
+            document.getElementById('start-btn').innerHTML = '<i data-lucide="refresh-cw" style="width:14px"></i><span>تحديث...</span>';
             lucide.createIcons();
-            if (navigator.geolocation) navigator.geolocation.watchPosition(updateTracking, null, { enableHighAccuracy: true });
+            if (navigator.geolocation) navigator.geolocation.watchPosition(updatePos, null, { enableHighAccuracy: true });
         }
 
-        function updateTracking(pos) {
-            const { latitude, longitude, speed } = pos.coords;
-            currentPos = [latitude, longitude];
-            document.getElementById('coords-n').innerText = `${latitude.toFixed(4)}° N`;
-            document.getElementById('coords-e').innerText = `${longitude.toFixed(4)}° E`;
-            document.getElementById('gps-status').innerText = "متصل";
+        function updatePos(p) {
+            const { latitude, longitude, speed } = p.coords;
+            pos = [latitude, longitude];
+            document.getElementById('coord-n').innerText = `${latitude.toFixed(4)}° N`;
+            document.getElementById('coord-e').innerText = `${longitude.toFixed(4)}° E`;
             const kmh = Math.round((speed || 0) * 3.6);
             document.getElementById('speed-val').innerText = kmh;
-            document.getElementById('speed-ring').style.strokeDashoffset = 165 - Math.min(1, kmh / 160) * 165;
+            document.getElementById('speed-bar').style.strokeDashoffset = 165 - Math.min(1, kmh / 160) * 165;
             if (!userMarker) {
-                userMarker = L.marker(currentPos, { icon: L.divIcon({ className: 'user-marker', iconSize: [20, 20] }) }).addTo(map);
-                map.setView(currentPos, 15);
-            } else userMarker.setLatLng(currentPos);
+                userMarker = L.marker(pos, { icon: L.divIcon({ className: 'user-dot' }) }).addTo(map);
+                map.setView(pos, 15);
+            } else userMarker.setLatLng(pos);
             checkZones(latitude, longitude);
         }
 
@@ -347,19 +278,19 @@
                 const poly = turf.polygon([z.coords.map(c => [c[1], c[0]]).concat([[z.coords[0][1], z.coords[0][0]]])]);
                 if (turf.booleanPointInPolygon(pt, poly)) found = z;
             });
-            const lbl = document.getElementById('zone-name'), b = document.body;
+            const lbl = document.getElementById('zone-name'), body = document.body;
             if (found) {
                 lbl.innerText = found.name.split(' ')[1]; lbl.style.color = found.color;
-                if (!isAuthorized && found.color === "#ff3860") {
-                    b.classList.add('red-alert');
-                    if (Date.now() - lastAlertTime > 20000) { showModal(found.name, found.msg); speak(found.msg); lastAlertTime = Date.now(); }
-                }
-            } else { lbl.innerText = "آمن"; lbl.style.color = "var(--primary)"; b.classList.remove('red-alert'); }
+                if (!isAuth && found.color === "#ff3860") {
+                    body.classList.add('red-alert');
+                    if (Date.now() - lastAlert > 20000) { showModal(found.name, found.msg); speak(found.msg); lastAlert = Date.now(); }
+                } else body.classList.remove('red-alert');
+            } else { lbl.innerText = "آمن"; lbl.style.color = "var(--primary)"; body.classList.remove('red-alert'); }
         }
 
-        function showModal(t, b) { document.getElementById('modal-title').innerText = t; document.getElementById('modal-body').innerText = b; document.getElementById('modal-overlay').style.display = 'flex'; }
-        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-        function speak(t) { if (!window.speechSynthesis) return; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ar-SA'; window.speechSynthesis.speak(u); }
+        function showModal(t, b) { document.getElementById('modal-t').innerText = t; document.getElementById('modal-b').innerText = b; document.getElementById('modal-ov').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal-ov').style.display = 'none'; }
+        function speak(text) { if (!window.speechSynthesis) return; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'ar-SA'; window.speechSynthesis.speak(u); }
 
         initMap();
     </script>
