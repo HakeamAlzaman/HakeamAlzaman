@@ -4,8 +4,7 @@
 <head>
     <title>Precision Pro Navigation | HUD</title>
     <meta charset="utf-8" />
-    <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -24,608 +23,126 @@
             --text-dim: rgba(255, 255, 255, 0.6);
         }
 
-        body,
-        html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            overflow: hidden;
-            font-family: 'Cairo', sans-serif;
-            background: var(--bg);
-            color: var(--text-main);
+        body, html {
+            margin: 0; padding: 0; height: 100%; overflow: hidden;
+            font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text-main);
         }
 
         .app-container {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding: 20px;
-            box-sizing: border-box;
-            gap: 20px;
+            display: flex; flex-direction: column; height: 100vh;
+            padding: 15px; box-sizing: border-box; gap: 15px;
         }
 
-        .top-header {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-            z-index: 10;
-        }
+        .top-header { display: flex; flex-direction: column; gap: 15px; z-index: 10; }
 
-        .top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; }
 
-        .left-actions {
-            display: flex;
-            gap: 10px;
-        }
+        .left-actions { display: flex; gap: 8px; align-items: center; }
 
         .action-btn {
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 8px 16px;
-            color: var(--text-main);
-            font-family: 'Cairo';
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            transition: 0.3s;
+            background: var(--panel-bg); border: 1px solid var(--glass-border);
+            border-radius: 12px; padding: 8px 14px; color: var(--text-main);
+            font-family: 'Cairo'; font-size: 13px; display: flex; align-items: center;
+            gap: 6px; cursor: pointer; backdrop-filter: blur(10px); transition: 0.3s;
         }
+        .action-btn:hover { background: rgba(255, 255, 255, 0.1); }
+        .action-btn.active-tracking { background: var(--primary); color: #000; border-color: var(--primary); font-weight: 900; }
 
-        .action-btn:hover {
-            background: rgba(255, 255, 255, 0.1);
-        }
+        .logo-box { display: flex; align-items: center; gap: 8px; }
+        .logo-text { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+        .logo-en { font-size: 13px; font-weight: 900; letter-spacing: 0.5px; }
+        .logo-ar { font-size: 10px; color: var(--text-dim); }
+        .logo-icon { color: var(--primary); width: 28px; height: 28px; filter: drop-shadow(0 0 5px var(--primary)); }
 
-        .action-btn.icon-only {
-            padding: 8px;
-        }
-
-        .logo-box {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .logo-text {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            line-height: 1.2;
-        }
-
-        .logo-en {
-            font-size: 14px;
-            font-weight: 900;
-            letter-spacing: 1px;
-        }
-
-        .logo-ar {
-            font-size: 11px;
-            color: var(--text-dim);
-        }
-
-        .logo-icon {
-            color: var(--primary);
-            width: 32px;
-            height: 32px;
-            filter: drop-shadow(0 0 5px var(--primary));
-        }
-
-        #hud-top {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 20px;
-        }
+        #hud-top { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
 
         .hud-card {
-            background: var(--panel-bg);
-            backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 15px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
-            position: relative;
+            background: var(--panel-bg); backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border); border-radius: 14px;
+            padding: 12px; display: flex; align-items: center; justify-content: center;
+            gap: 10px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3); position: relative;
         }
 
-        .hud-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-        }
+        .hud-icon { color: var(--primary); width: 24px; height: 24px; filter: drop-shadow(0 0 5px rgba(0, 242, 255, 0.3)); }
 
-        .icon-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
+        .hud-val-box { display: flex; flex-direction: column; }
+        .hud-label { font-size: 10px; color: var(--text-dim); font-weight: 700; text-transform: uppercase; }
+        .hud-main-val { font-size: 14px; font-weight: 900; }
 
-        .hud-icon {
-            color: var(--primary);
-            width: 32px;
-            height: 32px;
-            filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.4));
+        .speed-gauge { position: relative; width: 65px; height: 65px; }
+        .gauge-svg { transform: rotate(135deg); width: 100%; height: 100%; }
+        .gauge-bg { fill: none; stroke: rgba(255, 255, 255, 0.05); stroke-width: 5; stroke-dasharray: 165 220; }
+        .gauge-progress { 
+            fill: none; stroke: var(--primary); stroke-width: 5; stroke-linecap: round;
+            stroke-dasharray: 165 220; stroke-dashoffset: 165; transition: stroke-dashoffset 0.4s ease;
+            filter: drop-shadow(0 0 5px var(--primary));
         }
+        .speed-text-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .speed-number { font-size: 22px; font-weight: 900; color: var(--primary); line-height: 1; }
 
-        .hud-val-box {
-            display: flex;
-            flex-direction: column;
-        }
+        .map-container { flex: 1; position: relative; border-radius: 20px; overflow: hidden; border: 1px solid var(--glass-border); }
 
-        .align-center {
-            align-items: center;
-            text-align: center;
-        }
-
-        .align-right {
-            align-items: flex-start;
-            text-align: right;
-        }
-
-        .hud-label {
-            font-size: 12px;
-            color: var(--text-dim);
-            font-weight: 700;
-        }
-
-        .hud-main-val {
-            font-size: 18px;
-            font-weight: 900;
-        }
-
-        .signal-bars {
-            display: flex;
-            gap: 4px;
-            align-items: flex-end;
-            height: 16px;
-            margin-top: 5px;
-        }
-
-        .bar {
-            width: 5px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 2px;
-        }
-
-        .bar.active {
-            background: var(--primary);
-            box-shadow: 0 0 5px var(--primary);
-        }
-
-        .bar:nth-child(1) {
-            height: 6px;
-        }
-
-        .bar:nth-child(2) {
-            height: 9px;
-        }
-
-        .bar:nth-child(3) {
-            height: 12px;
-        }
-
-        .bar:nth-child(4) {
-            height: 15px;
-        }
-
-        .bar:nth-child(5) {
-            height: 18px;
-        }
-
-        .speed-card {
-            justify-content: space-between;
-        }
-
-        .speed-gauge {
-            position: relative;
-            width: 80px;
-            height: 80px;
-        }
-
-        .gauge-svg {
-            transform: rotate(135deg);
-            width: 100%;
-            height: 100%;
-        }
-
-        .gauge-bg {
-            fill: none;
-            stroke: rgba(255, 255, 255, 0.05);
-            stroke-width: 6;
-            stroke-dasharray: 165 220;
-        }
-
-        .gauge-progress {
-            fill: none;
-            stroke: var(--primary);
-            stroke-width: 6;
-            stroke-linecap: round;
-            stroke-dasharray: 165 220;
-            stroke-dashoffset: 165;
-            transition: stroke-dashoffset 0.4s ease;
-            filter: drop-shadow(0 0 6px var(--primary));
-        }
-
-        .speed-text-center {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .speed-number {
-            font-size: 28px;
-            font-weight: 900;
-            color: var(--primary);
-            line-height: 1;
-        }
-
-        .map-container {
-            flex: 1;
-            position: relative;
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid var(--glass-border);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
-        }
-
-        #map {
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-        }
+        #map { position: absolute; inset: 0; z-index: 0; }
 
         #search-box {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            width: 400px;
-            max-width: 90%;
-            display: flex;
-            align-items: center;
+            position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+            z-index: 1000; width: 350px; max-width: 90%;
         }
-
         .search-input {
-            width: 100%;
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 30px;
-            padding: 12px 20px 12px 50px;
-            color: #fff;
-            font-family: 'Cairo';
-            font-size: 14px;
-            outline: none;
-            backdrop-filter: blur(10px);
-            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+            width: 100%; background: var(--panel-bg); border: 1px solid var(--glass-border);
+            border-radius: 30px; padding: 10px 15px 10px 42px; color: #fff;
+            font-family: 'Cairo'; font-size: 13px; outline: none; backdrop-filter: blur(15px);
         }
-
-        .search-ic {
-            position: absolute;
-            left: 18px;
-            color: var(--text-dim);
-            width: 20px;
-        }
-
-        #center-graph {
-            position: absolute;
-            top: 80px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 10px 20px;
-            backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
+        .search-ic { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: var(--text-dim); width: 18px; }
 
         #nav-card {
-            position: absolute;
-            right: 20px;
-            top: 20px;
-            z-index: 1000;
-            width: 280px;
-            background: var(--panel-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 20px;
-            display: none;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
-            animation: slideIn 0.4s ease;
+            position: absolute; right: 15px; top: 15px; z-index: 1000;
+            width: 250px; background: var(--panel-bg); border: 1px solid var(--glass-border);
+            border-radius: 16px; padding: 15px; display: none; backdrop-filter: blur(20px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6); animation: slideIn 0.4s ease;
         }
 
-        .nav-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--glass-border);
-            padding-bottom: 15px;
-        }
-
-        .nav-dest {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        .nav-stats {
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-bottom: 20px;
-        }
-
-        .nav-turn {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 12px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateX(50px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateX(0);
-                opacity: 1;
-            }
-        }
-
-        #vignette {
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            z-index: 1500;
-            transition: 0.5s;
-            border-radius: 20px;
-        }
-
-        .red-alert #vignette {
-            animation: flashRed 1.5s infinite;
-        }
-
-        @keyframes flashRed {
-
-            0%,
-            100% {
-                box-shadow: inset 0 0 50px rgba(255, 0, 68, 0);
-            }
-
-            50% {
-                box-shadow: inset 0 0 150px rgba(255, 0, 68, 0.4);
-            }
-        }
+        #vignette { position: absolute; inset: 0; pointer-events: none; z-index: 1500; transition: 0.5s; }
+        .red-alert #vignette { animation: flashRed 1.5s infinite; }
+        @keyframes flashRed { 0%, 100% { box-shadow: inset 0 0 50px rgba(255, 0, 68, 0); } 50% { box-shadow: inset 0 0 150px rgba(255, 0, 68, 0.4); } }
 
         .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.85);
-            z-index: 3000;
-            backdrop-filter: blur(10px);
-            align-items: center;
-            justify-content: center;
+            display: none; position: fixed; inset: 0; background: rgba(0, 0, 0, 0.85);
+            z-index: 3000; backdrop-filter: blur(10px); align-items: center; justify-content: center;
         }
+        .modal { background: #111; border: 1px solid var(--glass-border); padding: 30px; border-radius: 20px; width: 350px; text-align: center; }
 
-        .modal {
-            background: #111;
-            border: 1px solid var(--glass-border);
-            padding: 40px;
-            border-radius: 30px;
-            width: 400px;
-            text-align: center;
-            box-shadow: 0 50px 100px #000;
-        }
+        .user-marker { width: 20px; height: 20px; background: #fff; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--primary); }
+        .user-marker::after { content: ''; position: absolute; inset: -12px; background: var(--primary); opacity: 0.15; border-radius: 50%; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
 
-        .user-marker {
-            width: 24px;
-            height: 24px;
-            background: #fff;
-            border: 3px solid #fff;
-            border-radius: 50%;
-            box-shadow: 0 0 20px var(--primary);
-            position: relative;
-        }
-
-        .user-marker::after {
-            content: '';
-            position: absolute;
-            inset: -15px;
-            background: var(--primary);
-            opacity: 0.2;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% {
-                transform: scale(0.5);
-                opacity: 0.8;
-            }
-
-            100% {
-                transform: scale(3.5);
-                opacity: 0;
-            }
-        }
-
-        [dir="rtl"] .search-input {
-            padding: 12px 50px 12px 20px;
-        }
-
-        [dir="rtl"] .search-ic {
-            right: 18px;
-            left: auto;
-        }
-
-        /* Speed Limit Badge */
         .speed-limit-badge {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 52px;
-            height: 52px;
-            border-radius: 50%;
-            border: 3px solid #fff;
-            background: #fff;
-            color: #cc0000;
-            font-weight: 900;
-            font-size: 17px;
-            line-height: 1;
-            flex-shrink: 0;
-            box-shadow: 0 0 0 3px #cc0000, 0 4px 12px rgba(0, 0, 0, 0.5);
+            width: 45px; height: 45px; border-radius: 50%; border: 3px solid #fff;
+            background: #fff; color: #cc0000; font-weight: 900; font-size: 15px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            box-shadow: 0 0 0 2px #cc0000;
         }
+        .speed-limit-badge small { font-size: 7px; color: #333; }
+        .speed-over .speed-number { color: var(--danger) !important; animation: blink 0.6s infinite; }
+        @keyframes blink { 50% { opacity: 0.4; } }
 
-        .speed-limit-badge small {
-            font-size: 8px;
-            font-weight: 700;
-            color: #333;
+        [dir="rtl"] .search-input { padding: 10px 42px 10px 15px; }
+        [dir="rtl"] .search-ic { right: 15px; left: auto; }
+
+        @media (max-width: 900px) {
+            #hud-top { grid-template-columns: repeat(2, 1fr); }
+            .logo-ar { display: none; }
         }
-
-        .speed-over .speed-number {
-            color: #ff0044 !important;
-            animation: blink 0.6s infinite;
-        }
-
-        @keyframes blink {
-            50% {
-                opacity: 0.4;
-            }
-        }
-
-        /* Permit button label */
-        #permit-label {
-            font-size: 12px;
-            font-weight: 800;
-        }
-
-        /* Responsive */
-        @media (max-width: 1024px) {
-            #hud-top {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 10px;
-            }
-
-            #nav-card {
-                top: auto;
-                bottom: 20px;
-                right: 50%;
-                transform: translateX(50%);
-                width: 92%;
-                max-width: 420px;
-            }
-
-            .map-container {
-                min-height: 55vh;
-            }
-        }
-
         @media (max-width: 600px) {
-            .app-container {
-                padding: 8px;
-                gap: 8px;
-            }
-
-            .top-bar {
-                gap: 8px;
-            }
-
-            .logo-en {
-                font-size: 11px;
-            }
-
-            .logo-ar {
-                display: none;
-            }
-
-            #hud-top {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 8px;
-            }
-
-            .hud-card {
-                padding: 10px 12px;
-                gap: 10px;
-            }
-
-            .hud-main-val {
-                font-size: 14px;
-            }
-
-            .speed-gauge {
-                width: 60px;
-                height: 60px;
-            }
-
-            .speed-number {
-                font-size: 20px !important;
-            }
-
-            #search-box {
-                top: 10px;
-                width: 96%;
-            }
-
-            #center-graph {
-                display: none;
-            }
-
-            .search-input {
-                font-size: 13px;
-                padding: 10px 16px 10px 42px;
-            }
-
-            #nav-card {
-                bottom: 10px;
-            }
-
-            .speed-limit-badge {
-                width: 44px;
-                height: 44px;
-                font-size: 14px;
-            }
-        }
-
-        @media (max-width: 380px) {
-            #hud-top {
-                grid-template-columns: 1fr 1fr;
-            }
-
-            .action-btn span {
-                display: none;
-            }
+            .app-container { padding: 8px; gap: 8px; }
+            #hud-top { gap: 8px; }
+            .hud-card { padding: 10px; }
+            .hud-main-val { font-size: 12px; }
+            .speed-gauge { width: 55px; height: 55px; }
+            .speed-number { font-size: 18px; }
+            #search-box { width: 95%; top: 10px; }
+            #nav-card { width: 90%; right: 5%; top: auto; bottom: 20px; transform: none; }
+            .action-btn span { font-size: 11px; }
         }
     </style>
 </head>
@@ -636,9 +153,12 @@
         <header class="top-header">
             <div class="top-bar">
                 <div class="left-actions">
-                    <button class="action-btn" id="permit-btn" onclick="togglePermit()"
-                        style="border-color:var(--danger);">
-                        <i id="permit-icon" data-lucide="shield-alert" style="color:var(--danger);width:16px"></i>
+                    <button class="action-btn" id="start-btn" onclick="startTracking()" style="background: var(--primary); color: #000; font-weight: 900;">
+                        <i data-lucide="play" style="width:14px"></i>
+                        <span>تفعيل التتبع</span>
+                    </button>
+                    <button class="action-btn" id="permit-btn" onclick="togglePermit()" style="border-color:var(--danger)">
+                        <i id="permit-icon" data-lucide="shield-alert" style="color:var(--danger); width:14px"></i>
                         <span id="permit-label" style="color:var(--danger)">غير مصرح</span>
                     </button>
                 </div>
@@ -653,44 +173,30 @@
 
             <div id="hud-top">
                 <div class="hud-card">
-                    <div class="icon-col">
-                        <i data-lucide="satellite" class="hud-icon"></i>
-                    </div>
-                    <div class="hud-val-box align-center">
+                    <i data-lucide="satellite" class="hud-icon"></i>
+                    <div class="hud-val-box">
+                        <span class="hud-label">الإشارة</span>
                         <span id="gps-status" class="hud-main-val">بانتظار GPS</span>
-                        <div class="signal-bars">
-                            <div class="bar active"></div>
-                            <div class="bar active"></div>
-                            <div class="bar active"></div>
-                            <div class="bar active"></div>
-                            <div class="bar"></div>
-                        </div>
                     </div>
                 </div>
 
                 <div class="hud-card">
-                    <div class="icon-col">
-                        <i data-lucide="shield" class="hud-icon"></i>
-                    </div>
-                    <div class="hud-val-box align-center">
-                        <span id="zone-name" class="hud-main-val" style="color: var(--primary)">منطقة آمنة</span>
-                        <span class="hud-label" style="color: var(--primary); opacity: 1;">نشط</span>
+                    <i data-lucide="shield" class="hud-icon"></i>
+                    <div class="hud-val-box">
+                        <span class="hud-label">النطاق</span>
+                        <span id="zone-name" class="hud-main-val" style="color: var(--primary)">آمن</span>
                     </div>
                 </div>
 
                 <div class="hud-card">
-                    <div class="hud-val-box align-right" style="width: 100%;">
-                        <span class="hud-label">إحداثيات GPS</span>
-                        <span id="coords-n" class="hud-main-val" style="direction: ltr; margin-top:5px">0.0000° N</span>
-                        <span id="coords-e" class="hud-main-val" style="direction: ltr;">0.0000° E</span>
+                    <div class="hud-val-box" style="direction: ltr; text-align: left;">
+                        <span class="hud-label">الإحداثيات</span>
+                        <span id="coords-n" class="hud-main-val">0.0000° N</span>
+                        <span id="coords-e" class="hud-main-val">0.0000° E</span>
                     </div>
                 </div>
 
-                <div class="hud-card speed-card" id="speed-card">
-                    <div class="hud-val-box align-right">
-                        <span class="hud-label">سرعتك الحالية</span>
-                        <span class="hud-label" style="margin-top:20px;font-size:10px">كم/ساعة</span>
-                    </div>
+                <div class="hud-card" id="speed-card">
                     <div class="speed-gauge">
                         <svg class="gauge-svg" viewBox="0 0 80 80">
                             <circle class="gauge-bg" cx="40" cy="40" r="35"></circle>
@@ -700,7 +206,7 @@
                             <span class="speed-number" id="speed-val">0</span>
                         </div>
                     </div>
-                    <div class="speed-limit-badge" id="speed-limit-badge" title="الحد الأقصى للسرعة">
+                    <div class="speed-limit-badge" id="speed-limit-badge">
                         <span id="speed-limit-val">--</span>
                         <small>حد</small>
                     </div>
@@ -711,87 +217,37 @@
         <main class="map-container">
             <div id="map"></div>
             <div id="vignette"></div>
-
             <div id="search-box">
-                <input type="text" id="destination-input" class="search-input" placeholder="ابحث عن وجهة..."
-                    onkeydown="handleSearch(event)">
+                <input type="text" id="destination-input" class="search-input" placeholder="ابحث عن وجهة..." onkeydown="handleSearch(event)">
                 <i data-lucide="search" class="search-ic"></i>
             </div>
-
-            <div id="center-graph">
-                <svg width="120" height="30" viewBox="0 0 120 30" fill="none" stroke="var(--primary)"
-                    stroke-width="1.5">
-                    <path
-                        d="M0,30 L10,20 L20,25 L30,5 L40,15 L50,10 L60,28 L70,20 L80,25 L90,10 L100,15 L110,5 L120,30" />
-                    <path
-                        d="M0,30 L10,25 L20,28 L30,15 L40,20 L50,15 L60,30 L70,25 L80,28 L90,15 L100,20 L110,10 L120,30"
-                        stroke="rgba(255,255,255,0.2)" />
-                </svg>
-            </div>
-
             <div id="nav-card">
-                <div class="nav-header">
-                    <div class="logo-text">
-                        <span class="logo-en" style="font-size:12px">PRECISION PRO</span>
-                        <span class="logo-ar" style="font-size:9px">بريسيشن برو</span>
-                    </div>
-                    <i data-lucide="navigation" style="color: var(--primary); width:20px"></i>
-                </div>
-                <div class="nav-dest">
-                    <i data-lucide="map-pin" style="width:16px; opacity:0.7"></i>
-                    <span>الوجهة: <span id="dest-name" style="font-weight:700">---</span></span>
-                </div>
-                <div class="nav-stats">
-                    المتبقي: <span id="nav-km" style="font-weight:700">---</span> | <span id="nav-min"
-                        style="font-weight:700">---</span>
-                </div>
-                <div class="nav-turn">
-                    <i data-lucide="corner-up-right" style="color:var(--primary)"></i>
-                    <span>منعطف قادم بعد 200 م</span>
+                <div id="dest-name" style="font-weight:900; color:var(--primary); margin-bottom:10px">---</div>
+                <div style="font-size:12px; opacity:0.8">
+                    المسافة: <span id="nav-km">---</span> | الوصول: <span id="nav-min">---</span>
                 </div>
             </div>
-
-            <button id="start-btn"
-                style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--primary); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; font-size: 16px; cursor: pointer; box-shadow: 0 10px 40px rgba(0, 242, 255, 0.4);">
-                تفعيل النظام
-            </button>
         </main>
     </div>
 
     <div id="modal-overlay" class="modal-overlay">
         <div class="modal">
-            <div style="font-size: 60px; margin-bottom: 20px;">🚨</div>
+            <div style="font-size: 50px; margin-bottom: 20px;">🚨</div>
             <h2 id="modal-title" style="margin-bottom: 15px; font-weight: 900;">تحذير أمني</h2>
             <p id="modal-body" style="opacity: 0.8; line-height: 1.6; margin-bottom: 30px;"></p>
-            <button onclick="closeModal()"
-                style="background: var(--primary); color: #000; border: none; padding: 12px 40px; border-radius: 12px; font-weight: 900; cursor: pointer;">فهمت،
-                سأنسحب</button>
+            <button onclick="closeModal()" style="background: var(--primary); color: #000; border: none; padding: 12px 40px; border-radius: 12px; font-weight: 900; cursor: pointer;">موافق</button>
         </div>
     </div>
 
     <script>
         let map, userMarker, targetMarker, routePolyline;
-        let isAuthorized = false;
-        let currentPos = null;
-        let lastAlertTime = 0;
-        let lastSpeedLimitPos = null;
-        let currentSpeedLimit = null;
-        let avoidLayers = [];
+        let isAuthorized = false, currentPos = null, lastAlertTime = 0, currentSpeedLimit = null;
 
         const zonesData = [
             {
-                name: "النطاق الأحمر (محظور)",
-                color: "#ff3860",
-                labelPos: [21.43, 39.81],
-                msg: "⚠️ منطقة محظورة أمنياً. يرجى الانسحاب فوراً لتجنب المخالفات.",
+                name: "النطاق الأحمر (محظور)", color: "#ff3860",
+                msg: "⚠️ منطقة محظورة أمنياً. يرجى الانسحاب فوراً.",
                 coords: [[20.7015, 39.7455], [20.8211, 39.8381], [20.8394, 39.8482], [20.8436, 39.8879], [21.0258, 39.8699], [21.1165, 39.9144], [21.1456, 39.9230], [21.1956, 39.9397], [21.2941, 40.0710], [21.3378, 40.1866], [21.3370, 40.2659], [21.3613, 40.2679], [21.3617, 40.2683], [21.3618, 40.2686], [21.3709, 40.2658], [21.5372, 40.2847], [21.5523, 40.3267], [21.6214, 40.3904], [21.6628, 40.3989], [21.6421, 40.3272], [21.6345, 40.2868], [21.6350, 40.2452], [21.6306, 40.2232], [21.6310, 40.1911], [21.6183, 40.1682], [21.6213, 40.1439], [21.6098, 40.1109], [21.6393, 40.0948], [21.6589, 40.0681], [21.6569, 40.0231], [21.6690, 39.9894], [21.7050, 39.9725], [21.6857, 39.9288], [21.6819, 39.9065], [21.6924, 39.9005], [21.6924, 39.8717], [21.6779, 39.8581], [21.7094, 39.8170], [21.7241, 39.7876], [21.7155, 39.7573], [21.6822, 39.7271], [21.6319, 39.7012], [21.6420, 39.6564], [21.6541, 39.6305], [21.6824, 39.5614], [21.6756, 39.5592], [21.5886, 39.5309], [21.5054, 39.6010], [21.4626, 39.5605], [21.3376, 39.5516], [21.2825, 39.5582], [21.2601, 39.5623], [21.1619, 39.5988], [21.1244, 39.5923], [21.0425, 39.5902], [20.9793, 39.5715], [20.8335, 39.6396], [20.7015, 39.7455]]
-            },
-            {
-                name: "النطاق البرتقالي (تنظيمي)",
-                color: "#F57C00",
-                labelPos: [21.40, 40.18],
-                msg: "⚠️ تنبيه: تقترب من منطقة منظمة أمنياً. تأكد من حصولك على التصريح.",
-                coords: [[20.9840, 40.2061], [21.2626, 40.4080], [21.4632, 40.5047], [21.6311, 40.4637], [21.6699, 40.4848], [21.7217, 40.4830], [21.8151, 39.9128], [21.8161, 39.8804], [21.8238, 39.8263], [21.8240, 39.8182], [21.8246, 39.8019], [21.7534, 39.5526], [21.6052, 39.4988], [21.1818, 39.5396], [20.9697, 39.5483], [20.6834, 39.7054], [20.7689, 40.0284], [20.9840, 40.2061]]
             }
         ];
 
@@ -799,12 +255,8 @@
             lucide.createIcons();
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([21.4, 39.8], 11);
             L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
-
             zonesData.forEach(z => {
                 L.polygon(z.coords, { color: z.color, fillOpacity: 0.1, weight: 1.5, dashArray: '5, 5' }).addTo(map);
-                L.marker(z.labelPos || z.coords[0], {
-                    icon: L.divIcon({ className: 'z-lbl', html: `<div style="color:${z.color}; font-weight:900; font-size:10px; background:rgba(0,0,0,0.5); padding:2px 6px; border-radius:4px; border:1px solid ${z.color}">${z.name}</div>` })
-                }).addTo(map);
             });
         }
 
@@ -813,244 +265,103 @@
             const btn = document.getElementById('permit-btn');
             const icon = document.getElementById('permit-icon');
             const label = document.getElementById('permit-label');
-
-            if (isAuthorized) {
-                btn.style.borderColor = 'var(--primary)';
-                icon.setAttribute('data-lucide', 'shield-check');
-                icon.style.color = 'var(--primary)';
-                label.innerText = 'مصرح';
-                label.style.color = 'var(--primary)';
-                showToast("✅ تم تفعيل التصريح - المسار مباشر");
-                speak("تم تفعيل التصريح، المسار الآن مباشر عبر المناطق المحظورة");
-            } else {
-                btn.style.borderColor = 'var(--danger)';
-                icon.setAttribute('data-lucide', 'shield-alert');
-                icon.style.color = 'var(--danger)';
-                label.innerText = 'غير مصرح';
-                label.style.color = 'var(--danger)';
-                showToast("⚠️ تم إلغاء التصريح - المسار يتجنب المناطق المحظورة");
-                speak("تم إلغاء التصريح، سيتم تحويل المسار لتجنب المناطق المحظورة");
-            }
+            btn.style.borderColor = isAuthorized ? 'var(--primary)' : 'var(--danger)';
+            icon.setAttribute('data-lucide', isAuthorized ? 'shield-check' : 'shield-alert');
+            icon.style.color = isAuthorized ? 'var(--primary)' : 'var(--danger)';
+            label.innerText = isAuthorized ? 'مصرح' : 'غير مصرح';
+            label.style.color = isAuthorized ? 'var(--primary)' : 'var(--danger)';
             lucide.createIcons();
-            if (targetMarker) planRoute(targetMarker.getLatLng());
+            speak(isAuthorized ? "تم تفعيل التصريح" : "تم إلغاء التصريح");
+            if (targetMarker) updateRoute(targetMarker.getLatLng());
         }
 
         async function handleSearch(e) {
             if (e.key === 'Enter') {
-                const query = e.target.value;
-                if (!query) return;
-                try {
-                    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
-                    const data = await res.json();
-                    if (data.length > 0) {
-                        const coords = [parseFloat(data[0].lat), parseFloat(data[0].lon)];
-                        setDestination(coords, data[0].display_name);
-                    }
-                } catch (err) { console.error(err); }
+                const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(e.target.value)}&limit=1`);
+                const data = await res.json();
+                if (data.length > 0) setDestination([parseFloat(data[0].lat), parseFloat(data[0].lon)], data[0].display_name);
             }
         }
 
         function setDestination(coords, name) {
             if (targetMarker) map.removeLayer(targetMarker);
-            targetMarker = L.marker(coords, { icon: L.divIcon({ className: 'dest-pin', html: '<i data-lucide="map-pin" style="color:#ff3860; fill:#ff3860"></i>' }) }).addTo(map);
+            targetMarker = L.marker(coords).addTo(map);
             document.getElementById('nav-card').style.display = 'block';
             document.getElementById('dest-name').innerText = name.split(',')[0];
-            lucide.createIcons();
-            planRoute(coords);
+            updateRoute(coords);
         }
 
-        function isInside(lat, lon, polygon) {
-            let inside = false;
-            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
-                const xi = polygon[i][0], yi = polygon[i][1];
-                const xj = polygon[j][0], yj = polygon[j][1];
-                if (((yi > lon) !== (yj > lon)) && (lat < (xj - xi) * (lon - yi) / (yj - yi) + xi)) inside = !inside;
-            }
-            return inside;
-        }
-
-        function findSafeWaypoints(from, to, zone) {
-            const boundary = zone.coords;
-            let bestPoint = null;
-            let minDistSum = Infinity;
-
-            // Simple logic: pick 4 candidate points around the zone edge and find the one that minimizes detour
-            const centroid = boundary.reduce((acc, p) => [acc[0] + p[0] / boundary.length, acc[1] + p[1] / boundary.length], [0, 0]);
-
-            for (let angle = 0; angle < 360; angle += 45) {
-                const rad = angle * Math.PI / 180;
-                // Move 15km (approx 0.14 degrees) away from centroid
-                const candidate = [centroid[0] + Math.cos(rad) * 0.25, centroid[1] + Math.sin(rad) * 0.25];
-                if (!isInside(candidate[0], candidate[1], zone.coords)) {
-                    const d = Math.hypot(candidate[0] - from[0], candidate[1] - from[1]) + Math.hypot(candidate[0] - to[0], candidate[1] - to[1]);
-                    if (d < minDistSum) { minDistSum = d; bestPoint = candidate; }
-                }
-            }
-            return bestPoint ? [bestPoint] : [];
-        }
-
-        async function planRoute(dest) {
+        async function updateRoute(dest) {
             if (!currentPos) return;
-            if (routePolyline) map.removeLayer(routePolyline);
-            avoidLayers.forEach(l => map.removeLayer(l));
-            avoidLayers = [];
-
-            const redZone = zonesData[0];
-            let waypoints = [];
-            let isDetour = false;
-
-            // Check if direct line intersects red zone
-            const steps = 20;
-            for (let i = 1; i < steps; i++) {
-                const checkPt = [currentPos[0] + (dest[0] - currentPos[0]) * i / steps, currentPos[1] + (dest[1] - currentPos[1]) * i / steps];
-                if (!isAuthorized && isInside(checkPt[0], checkPt[1], redZone.coords)) {
-                    isDetour = true;
-                    waypoints = findSafeWaypoints(currentPos, dest, redZone);
-                    break;
+            const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${currentPos[1]},${currentPos[0]};${dest[1] ? dest[1] : dest.lng},${dest[0] ? dest[0] : dest.lat}?overview=full&geometries=geojson&alternatives=3`);
+            const data = await res.json();
+            if (data.routes && data.routes.length > 0) {
+                let r = data.routes[0];
+                if (!isAuthorized) {
+                    const safe = data.routes.find(rt => !checkPathDanger(rt.geometry));
+                    if (safe) r = safe; else speak("تنبيه: المسار يمر عبر منطقة محظورة");
                 }
+                if (routePolyline) map.removeLayer(routePolyline);
+                routePolyline = L.geoJSON(r.geometry, { style: { color: !isAuthorized && checkPathDanger(r.geometry) ? 'var(--danger)' : 'var(--primary)', weight: 6, opacity: 0.7 } }).addTo(map);
+                document.getElementById('nav-km').innerText = (r.distance / 1000).toFixed(1) + ' كم';
+                document.getElementById('nav-min').innerText = Math.round(r.duration / 60) + ' د';
+                map.fitBounds(routePolyline.getBounds(), { padding: [40, 40] });
             }
-
-            const wpStr = [currentPos, ...waypoints, dest].map(p => `${p[1]},${p[0]}`).join(';');
-            const url = `https://router.project-osrm.org/route/v1/driving/${wpStr}?overview=full&geometries=geojson`;
-
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
-                if (data.routes && data.routes[0]) {
-                    routePolyline = L.geoJSON(data.routes[0].geometry, {
-                        style: { color: isDetour ? '#ffcc00' : 'var(--primary)', weight: 6, opacity: 0.8, dashArray: isDetour ? '10, 10' : '' }
-                    }).addTo(map);
-
-                    document.getElementById('nav-km').innerText = (data.routes[0].distance / 1000).toFixed(1) + ' كم';
-                    document.getElementById('nav-min').innerText = Math.round(data.routes[0].duration / 60) + ' د';
-                    map.fitBounds(routePolyline.getBounds(), { padding: [50, 50] });
-
-                    if (isDetour) {
-                        waypoints.forEach(wp => {
-                            const m = L.circleMarker(wp, { radius: 6, color: '#ffcc00', fillOpacity: 1 }).addTo(map);
-                            avoidLayers.push(m);
-                        });
-                    }
-                }
-            } catch (err) { console.error(err); }
         }
 
-        async function getSpeedLimit(lat, lon) {
-            // Overpass API for maxspeed
-            const query = `[out:json];way(around:30,${lat},${lon})[maxspeed];out tags;`;
-            try {
-                const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
-                const data = await res.json();
-                if (data.elements && data.elements.length > 0) {
-                    const limit = parseInt(data.elements[0].tags.maxspeed);
-                    if (!isNaN(limit)) {
-                        currentSpeedLimit = limit;
-                        document.getElementById('speed-limit-val').innerText = limit;
-                        return;
-                    }
-                }
-                document.getElementById('speed-limit-val').innerText = '--';
-                currentSpeedLimit = null;
-            } catch (e) { console.error("Speed limit error", e); }
+        function checkPathDanger(routeGeo) {
+            for (const z of zonesData) {
+                const poly = turf.polygon([z.coords.map(c => [c[1], c[0]]).concat([[z.coords[0][1], z.coords[0][0]]])]);
+                if (turf.booleanIntersects(routeGeo, poly)) return true;
+            }
+            return false;
+        }
+
+        function startTracking() {
+            document.getElementById('start-btn').classList.add('active-tracking');
+            document.getElementById('start-btn').innerHTML = '<i data-lucide="refresh-cw" style="width:14px"></i><span>تحديث الموقع</span>';
+            lucide.createIcons();
+            if (navigator.geolocation) navigator.geolocation.watchPosition(updateTracking, null, { enableHighAccuracy: true });
         }
 
         function updateTracking(pos) {
             const { latitude, longitude, speed } = pos.coords;
             currentPos = [latitude, longitude];
-            const kmh = Math.round((speed || 0) * 3.6);
-
-            // Update GPS HUD
             document.getElementById('coords-n').innerText = `${latitude.toFixed(4)}° N`;
             document.getElementById('coords-e').innerText = `${longitude.toFixed(4)}° E`;
             document.getElementById('gps-status').innerText = "متصل";
-
-            // Update Speedometer
+            const kmh = Math.round((speed || 0) * 3.6);
             document.getElementById('speed-val').innerText = kmh;
-            const offset = 165 - Math.min(1, kmh / 160) * 165;
-            document.getElementById('speed-ring').style.strokeDashoffset = offset;
-
-            // Speed Limit Logic
-            if (!lastSpeedLimitPos || Math.hypot(latitude - lastSpeedLimitPos[0], longitude - lastSpeedLimitPos[1]) > 0.0005) {
-                getSpeedLimit(latitude, longitude);
-                lastSpeedLimitPos = [latitude, longitude];
-            }
-
-            const speedCard = document.getElementById('speed-card');
-            if (currentSpeedLimit && kmh > currentSpeedLimit) {
-                speedCard.classList.add('speed-over');
-            } else {
-                speedCard.classList.remove('speed-over');
-            }
-
-            // Update Marker
+            document.getElementById('speed-ring').style.strokeDashoffset = 165 - Math.min(1, kmh / 160) * 165;
             if (!userMarker) {
-                userMarker = L.marker(currentPos, { icon: L.divIcon({ className: 'user-marker', iconSize: [24, 24] }) }).addTo(map);
+                userMarker = L.marker(currentPos, { icon: L.divIcon({ className: 'user-marker', iconSize: [20, 20] }) }).addTo(map);
                 map.setView(currentPos, 15);
-            } else {
-                userMarker.setLatLng(currentPos);
-            }
-
+            } else userMarker.setLatLng(currentPos);
             checkZones(latitude, longitude);
         }
 
         function checkZones(lat, lon) {
             let found = null;
-            zonesData.forEach(z => { if (isInside(lat, lon, z.coords)) found = z; });
-
-            const zoneLabel = document.getElementById('zone-name');
-            const body = document.body;
-
+            const pt = turf.point([lon, lat]);
+            zonesData.forEach(z => {
+                const poly = turf.polygon([z.coords.map(c => [c[1], c[0]]).concat([[z.coords[0][1], z.coords[0][0]]])]);
+                if (turf.booleanPointInPolygon(pt, poly)) found = z;
+            });
+            const lbl = document.getElementById('zone-name'), b = document.body;
             if (found) {
-                zoneLabel.innerText = found.name;
-                zoneLabel.style.color = found.color;
-                if (!isAuthorized && found.name.includes("أحمر")) {
-                    body.classList.add('red-alert');
-                    if (Date.now() - lastAlertTime > 20000) {
-                        showModal(found.name, found.msg);
-                        speak(found.msg);
-                        lastAlertTime = Date.now();
-                    }
+                lbl.innerText = found.name.split(' ')[1]; lbl.style.color = found.color;
+                if (!isAuthorized && found.color === "#ff3860") {
+                    b.classList.add('red-alert');
+                    if (Date.now() - lastAlertTime > 20000) { showModal(found.name, found.msg); speak(found.msg); lastAlertTime = Date.now(); }
                 }
-            } else {
-                zoneLabel.innerText = "منطقة آمنة";
-                zoneLabel.style.color = "var(--primary)";
-                body.classList.remove('red-alert');
-            }
+            } else { lbl.innerText = "آمن"; lbl.style.color = "var(--primary)"; b.classList.remove('red-alert'); }
         }
 
-        function showModal(title, body) {
-            document.getElementById('modal-title').innerText = title;
-            document.getElementById('modal-body').innerText = body;
-            document.getElementById('modal-overlay').style.display = 'flex';
-        }
-
+        function showModal(t, b) { document.getElementById('modal-title').innerText = t; document.getElementById('modal-body').innerText = b; document.getElementById('modal-overlay').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-
-        function showToast(msg) {
-            const t = document.createElement('div');
-            t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:20px; z-index:9999; font-size:12px; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1);";
-            t.innerText = msg;
-            document.body.appendChild(t);
-            setTimeout(() => t.remove(), 3000);
-        }
-
-        function speak(text) {
-            if (!window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            const u = new SpeechSynthesisUtterance(text);
-            u.lang = 'ar-SA';
-            window.speechSynthesis.speak(u);
-        }
-
-        document.getElementById('start-btn').onclick = function () {
-            this.style.display = 'none';
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(updateTracking, null, { enableHighAccuracy: true });
-            }
-        };
+        function speak(t) { if (!window.speechSynthesis) return; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(t); u.lang = 'ar-SA'; window.speechSynthesis.speak(u); }
 
         initMap();
     </script>
 </body>
-
 </html>
