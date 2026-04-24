@@ -95,8 +95,20 @@
         .modal-ov { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 3000; backdrop-filter: blur(10px); align-items: center; justify-content: center; padding: 20px; }
         .modal { background: #111; border: 1px solid var(--border); border-radius: 20px; padding: 30px; text-align: center; width: 100%; max-width: 350px; }
 
-        .user-dot { width: 18px; height: 18px; background: #fff; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 15px var(--primary); position: relative; }
-        .user-dot::after { content: ''; position: absolute; inset: -12px; background: var(--primary); opacity: 0.2; border-radius: 50%; animation: p 2s infinite; }
+        .user-dot { 
+            width: 18px; height: 18px; 
+            background: var(--user-color, #fff); 
+            border: 3px solid #fff; 
+            border-radius: 50%; 
+            box-shadow: 0 0 20px var(--user-color, var(--primary)); 
+            position: relative; 
+            transition: 0.3s;
+        }
+        .user-dot::after { 
+            content: ''; position: absolute; inset: -12px; 
+            background: var(--user-color, var(--primary)); 
+            opacity: 0.2; border-radius: 50%; animation: p 2s infinite; 
+        }
         @keyframes p { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
 
         @media (max-width: 380px) { .hud-header { grid-template-columns: 1fr; } .controls { top: 160px; } }
@@ -250,11 +262,39 @@
             return turf.booleanIntersects(routeGeo, poly);
         }
 
+        let wakeLock = null;
+
+        async function requestWakeLock() {
+            try {
+                if ('wakeLock' in navigator) {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                }
+            } catch (err) {
+                console.error("Wake Lock error:", err);
+            }
+        }
+
         function startTracking() {
-            document.getElementById('start-btn').innerHTML = '<i data-lucide="refresh-cw" style="width:14px"></i><span>تحديث...</span>';
+            const btn = document.getElementById('start-btn');
+            btn.innerHTML = '<i data-lucide="refresh-cw" style="width:14px"></i><span>تحديث...</span>';
             lucide.createIcons();
+            
+            // Request Notification Permission
+            if ("Notification" in window) {
+                Notification.requestPermission();
+            }
+
+            requestWakeLock();
+
             if (navigator.geolocation) navigator.geolocation.watchPosition(updatePos, null, { enableHighAccuracy: true });
         }
+
+        // Re-acquire wake lock if tab becomes visible
+        document.addEventListener('visibilitychange', () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                requestWakeLock();
+            }
+        });
 
         let lastSpeedPos = null, currentSpeedLimit = null;
 
@@ -333,14 +373,37 @@
             const lbl = document.getElementById('zone-name'), body = document.body;
             if (found) {
                 lbl.innerText = found.name.split(' ')[1]; lbl.style.color = found.color;
+                
+                // Update User Marker Color
+                if (userMarker) {
+                    userMarker.getElement().style.setProperty('--user-color', found.color);
+                }
+
                 if (!isAuth && found.color === "#ff3860") {
                     body.classList.add('red-alert');
                     if (Date.now() - lastAlert > 20000) { showModal(found.name, found.msg); speak(found.msg); lastAlert = Date.now(); }
                 } else body.classList.remove('red-alert');
-            } else { lbl.innerText = "آمن"; lbl.style.color = "var(--primary)"; body.classList.remove('red-alert'); }
+            } else { 
+                lbl.innerText = "آمن"; lbl.style.color = "var(--primary)"; 
+                body.classList.remove('red-alert'); 
+                
+                // Reset User Marker Color
+                if (userMarker) {
+                    userMarker.getElement().style.setProperty('--user-color', '#fff');
+                }
+            }
         }
 
-        function showModal(t, b) { document.getElementById('modal-t').innerText = t; document.getElementById('modal-b').innerText = b; document.getElementById('modal-ov').style.display = 'flex'; }
+        function showModal(t, b) { 
+            document.getElementById('modal-t').innerText = t; 
+            document.getElementById('modal-b').innerText = b; 
+            document.getElementById('modal-ov').style.display = 'flex'; 
+            
+            // Send system notification if backgrounded
+            if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+                new Notification(t, { body: b });
+            }
+        }
         function closeModal() { document.getElementById('modal-ov').style.display = 'none'; }
         function speak(text) { if (!window.speechSynthesis) return; window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'ar-SA'; window.speechSynthesis.speak(u); }
 
