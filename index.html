@@ -347,6 +347,12 @@
                 userMarker = L.marker(pos, { icon: L.divIcon({ className: 'user-dot' }) }).addTo(map);
                 map.setView(pos, 15);
             } else userMarker.setLatLng(pos);
+
+            // Real-time navigation update
+            if (targetMarker) {
+                updateRoute(targetMarker.getLatLng());
+            }
+
             checkZones(latitude, longitude);
         }
 
