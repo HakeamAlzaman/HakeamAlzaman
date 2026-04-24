@@ -111,7 +111,18 @@
         }
         @keyframes p { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(3); opacity: 0; } }
 
-        @media (max-width: 380px) { .hud-header { grid-template-columns: 1fr; } .controls { top: 160px; } }
+        @media (max-width: 480px) {
+            .hud-header { grid-template-columns: 1fr; }
+            .controls { top: 160px; }
+            .hud-card { padding: 8px; gap: 6px; }
+        }
+
+        @media (orientation: landscape) {
+            .hud-header { width: auto; right: 10px; left: auto; display: flex; flex-direction: column; top: 10px; }
+            .controls { left: auto; right: 10px; top: 50%; transform: translateY(-50%); }
+            #search-box { bottom: 10px; left: 10px; transform: none; width: 280px; }
+            #nav-info { bottom: 10px; left: 300px; transform: none; width: 320px; }
+        }
     </style>
 </head>
 
