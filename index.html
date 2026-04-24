@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <title>Precision Pro Navigation | HUD</title>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -15,208 +17,793 @@
             --primary: #00f2ff;
             --danger: #ff0044;
             --warning: #ffcc00;
-            --glass: rgba(10, 10, 15, 0.88);
+            --bg: #131720;
+            --panel-bg: rgba(30, 35, 45, 0.7);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
         }
 
-        body, html { margin: 0; padding: 0; height: 100%; overflow: hidden; font-family: 'Cairo', sans-serif; background: #000; color: #fff; }
+        body,
+        html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            overflow: hidden;
+            font-family: 'Cairo', sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+        }
 
-        #map { position: absolute; inset: 0; z-index: 0; }
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+            gap: 20px;
+        }
+
+        .top-header {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            z-index: 10;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .left-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .action-btn {
+            background: var(--panel-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 8px 16px;
+            color: var(--text-main);
+            font-family: 'Cairo';
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: 0.3s;
+        }
+
+        .action-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .action-btn.icon-only {
+            padding: 8px;
+        }
+
+        .logo-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            line-height: 1.2;
+        }
+
+        .logo-en {
+            font-size: 14px;
+            font-weight: 900;
+            letter-spacing: 1px;
+        }
+
+        .logo-ar {
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 0 5px var(--primary));
+        }
 
         #hud-top {
-            position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; display: grid; grid-template-columns: repeat(4, 1fr);
-            gap: 15px; width: 95%; max-width: 1400px; pointer-events: none;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
         }
 
         .hud-card {
-            background: var(--glass); backdrop-filter: blur(40px);
-            border: 1px solid var(--glass-border); border-radius: 20px;
-            padding: 15px; display: flex; align-items: center; gap: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); pointer-events: auto;
+            background: var(--panel-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+            position: relative;
         }
 
-        .hud-icon { color: var(--primary); width: 28px; height: 28px; }
-
-        .hud-val-box { display: flex; flex-direction: column; }
-        .hud-label { font-size: 11px; opacity: 0.5; font-weight: 700; text-transform: uppercase; }
-        .hud-main-val { font-size: 16px; font-weight: 900; }
-
-        .speed-gauge { position: relative; width: 70px; height: 70px; }
-        .gauge-svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .gauge-bg { fill: none; stroke: rgba(255,255,255,0.05); stroke-width: 6; }
-        .gauge-progress { 
-            fill: none; stroke: var(--primary); stroke-width: 6; 
-            stroke-linecap: round; stroke-dasharray: 220; stroke-dashoffset: 220;
-            transition: stroke-dashoffset 0.4s ease; filter: drop-shadow(0 0 5px var(--primary));
+        .hud-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
         }
-        .speed-text-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 900; }
+
+        .icon-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .hud-icon {
+            color: var(--primary);
+            width: 32px;
+            height: 32px;
+            filter: drop-shadow(0 0 8px rgba(0, 242, 255, 0.4));
+        }
+
+        .hud-val-box {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .align-center {
+            align-items: center;
+            text-align: center;
+        }
+
+        .align-right {
+            align-items: flex-start;
+            text-align: right;
+        }
+
+        .hud-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 700;
+        }
+
+        .hud-main-val {
+            font-size: 18px;
+            font-weight: 900;
+        }
+
+        .signal-bars {
+            display: flex;
+            gap: 4px;
+            align-items: flex-end;
+            height: 16px;
+            margin-top: 5px;
+        }
+
+        .bar {
+            width: 5px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 2px;
+        }
+
+        .bar.active {
+            background: var(--primary);
+            box-shadow: 0 0 5px var(--primary);
+        }
+
+        .bar:nth-child(1) {
+            height: 6px;
+        }
+
+        .bar:nth-child(2) {
+            height: 9px;
+        }
+
+        .bar:nth-child(3) {
+            height: 12px;
+        }
+
+        .bar:nth-child(4) {
+            height: 15px;
+        }
+
+        .bar:nth-child(5) {
+            height: 18px;
+        }
+
+        .speed-card {
+            justify-content: space-between;
+        }
+
+        .speed-gauge {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .gauge-svg {
+            transform: rotate(135deg);
+            width: 100%;
+            height: 100%;
+        }
+
+        .gauge-bg {
+            fill: none;
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 6;
+            stroke-dasharray: 165 220;
+        }
+
+        .gauge-progress {
+            fill: none;
+            stroke: var(--primary);
+            stroke-width: 6;
+            stroke-linecap: round;
+            stroke-dasharray: 165 220;
+            stroke-dashoffset: 165;
+            transition: stroke-dashoffset 0.4s ease;
+            filter: drop-shadow(0 0 6px var(--primary));
+        }
+
+        .speed-text-center {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .speed-number {
+            font-size: 28px;
+            font-weight: 900;
+            color: var(--primary);
+            line-height: 1;
+        }
+
+        .map-container {
+            flex: 1;
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+        }
+
+        #map {
+            position: absolute;
+            inset: 0;
+            z-index: 0;
+        }
 
         #search-box {
-            position: fixed; top: 130px; left: 50%; transform: translateX(-50%);
-            z-index: 1000; width: 400px; max-width: 90%;
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            width: 400px;
+            max-width: 90%;
+            display: flex;
+            align-items: center;
         }
+
         .search-input {
-            width: 100%; background: var(--glass); border: 1px solid var(--glass-border);
-            border-radius: 30px; padding: 12px 20px 12px 50px; color: #fff;
-            font-family: 'Cairo'; font-size: 14px; outline: none; backdrop-filter: blur(20px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            width: 100%;
+            background: var(--panel-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 30px;
+            padding: 12px 20px 12px 50px;
+            color: #fff;
+            font-family: 'Cairo';
+            font-size: 14px;
+            outline: none;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
         }
-        .search-ic { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: var(--primary); width: 20px; }
+
+        .search-ic {
+            position: absolute;
+            left: 18px;
+            color: var(--text-dim);
+            width: 20px;
+        }
+
+        #center-graph {
+            position: absolute;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: var(--panel-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 10px 20px;
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
 
         #nav-card {
-            position: fixed; right: 25px; top: 230px; z-index: 1000;
-            width: 260px; background: var(--glass); border: 1px solid var(--glass-border);
-            border-radius: 20px; padding: 20px; display: none; backdrop-filter: blur(30px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.6); animation: slideIn 0.4s ease;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            z-index: 1000;
+            width: 280px;
+            background: var(--panel-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 20px;
+            display: none;
+            backdrop-filter: blur(20px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+            animation: slideIn 0.4s ease;
         }
-        @keyframes slideIn { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
 
-        #permit-btn {
-            position: fixed; top: 30px; left: 30px; z-index: 2000;
-            background: var(--glass); border: 1px solid var(--glass-border);
-            border-radius: 50px; padding: 10px 20px; display: flex; align-items: center;
-            gap: 10px; cursor: pointer; transition: 0.3s;
+        .nav-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 15px;
         }
-        #permit-btn.authorized { border-color: var(--primary); box-shadow: 0 0 15px rgba(0,242,255,0.2); }
 
-        #vignette { position: fixed; inset: 0; pointer-events: none; z-index: 1500; transition: 0.5s; }
-        .red-alert #vignette { animation: flashRed 1.5s infinite; }
-        @keyframes flashRed { 0%, 100% { box-shadow: inset 0 0 50px rgba(255,0,68,0); } 50% { box-shadow: inset 0 0 150px rgba(255,0,68,0.4); } }
+        .nav-dest {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .nav-stats {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-bottom: 20px;
+        }
+
+        .nav-turn {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 700;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        #vignette {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1500;
+            transition: 0.5s;
+            border-radius: 20px;
+        }
+
+        .red-alert #vignette {
+            animation: flashRed 1.5s infinite;
+        }
+
+        @keyframes flashRed {
+
+            0%,
+            100% {
+                box-shadow: inset 0 0 50px rgba(255, 0, 68, 0);
+            }
+
+            50% {
+                box-shadow: inset 0 0 150px rgba(255, 0, 68, 0.4);
+            }
+        }
 
         .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-            z-index: 3000; backdrop-filter: blur(10px); align-items: center; justify-content: center;
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 3000;
+            backdrop-filter: blur(10px);
+            align-items: center;
+            justify-content: center;
         }
+
         .modal {
-            background: #111; border: 1px solid var(--glass-border); padding: 40px;
-            border-radius: 30px; width: 400px; text-align: center; box-shadow: 0 50px 100px #000;
+            background: #111;
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 30px;
+            width: 400px;
+            text-align: center;
+            box-shadow: 0 50px 100px #000;
         }
 
-        .user-marker { width: 24px; height: 24px; background: #fff; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 20px var(--primary); position: relative; }
-        .user-marker::after { content: ''; position: absolute; inset: -15px; background: var(--primary); opacity: 0.2; border-radius: 50%; animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { transform: scale(0.5); opacity: 0.8; } 100% { transform: scale(3.5); opacity: 0; } }
+        .user-marker {
+            width: 24px;
+            height: 24px;
+            background: #fff;
+            border: 3px solid #fff;
+            border-radius: 50%;
+            box-shadow: 0 0 20px var(--primary);
+            position: relative;
+        }
 
-        [dir="rtl"] .search-input { padding: 12px 50px 12px 20px; }
-        [dir="rtl"] .search-ic { right: 18px; left: auto; }
+        .user-marker::after {
+            content: '';
+            position: absolute;
+            inset: -15px;
+            background: var(--primary);
+            opacity: 0.2;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: scale(0.5);
+                opacity: 0.8;
+            }
+
+            100% {
+                transform: scale(3.5);
+                opacity: 0;
+            }
+        }
+
+        [dir="rtl"] .search-input {
+            padding: 12px 50px 12px 20px;
+        }
+
+        [dir="rtl"] .search-ic {
+            right: 18px;
+            left: auto;
+        }
+
+        /* Speed Limit Badge */
+        .speed-limit-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            border: 3px solid #fff;
+            background: #fff;
+            color: #cc0000;
+            font-weight: 900;
+            font-size: 17px;
+            line-height: 1;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px #cc0000, 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        .speed-limit-badge small {
+            font-size: 8px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .speed-over .speed-number {
+            color: #ff0044 !important;
+            animation: blink 0.6s infinite;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        /* Permit button label */
+        #permit-label {
+            font-size: 12px;
+            font-weight: 800;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            #hud-top {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+            }
+
+            #nav-card {
+                top: auto;
+                bottom: 20px;
+                right: 50%;
+                transform: translateX(50%);
+                width: 92%;
+                max-width: 420px;
+            }
+
+            .map-container {
+                min-height: 55vh;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .app-container {
+                padding: 8px;
+                gap: 8px;
+            }
+
+            .top-bar {
+                gap: 8px;
+            }
+
+            .logo-en {
+                font-size: 11px;
+            }
+
+            .logo-ar {
+                display: none;
+            }
+
+            #hud-top {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 8px;
+            }
+
+            .hud-card {
+                padding: 10px 12px;
+                gap: 10px;
+            }
+
+            .hud-main-val {
+                font-size: 14px;
+            }
+
+            .speed-gauge {
+                width: 60px;
+                height: 60px;
+            }
+
+            .speed-number {
+                font-size: 20px !important;
+            }
+
+            #search-box {
+                top: 10px;
+                width: 96%;
+            }
+
+            #center-graph {
+                display: none;
+            }
+
+            .search-input {
+                font-size: 13px;
+                padding: 10px 16px 10px 42px;
+            }
+
+            #nav-card {
+                bottom: 10px;
+            }
+
+            .speed-limit-badge {
+                width: 44px;
+                height: 44px;
+                font-size: 14px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            #hud-top {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .action-btn span {
+                display: none;
+            }
+        }
     </style>
 </head>
+
 <body>
 
-    <div id="permit-btn" onclick="togglePermit()">
-        <i id="permit-icon" data-lucide="shield-alert" style="color: var(--danger)"></i>
-        <span id="permit-text" style="font-weight: 800;">غير مصرح</span>
-    </div>
+    <div class="app-container">
+        <header class="top-header">
+            <div class="top-bar">
+                <div class="left-actions">
+                    <button class="action-btn" id="permit-btn" onclick="togglePermit()"
+                        style="border-color:var(--danger);">
+                        <i id="permit-icon" data-lucide="shield-alert" style="color:var(--danger);width:16px"></i>
+                        <span id="permit-label" style="color:var(--danger)">غير مصرح</span>
+                    </button>
+                </div>
+                <div class="logo-box">
+                    <div class="logo-text">
+                        <span class="logo-en">PRECISION PRO</span>
+                        <span class="logo-ar">بريسيشن برو</span>
+                    </div>
+                    <i data-lucide="shield-check" class="logo-icon"></i>
+                </div>
+            </div>
 
-    <div id="hud-top">
-        <div class="hud-card">
-            <i data-lucide="satellite" class="hud-icon"></i>
-            <div class="hud-val-box">
-                <span class="hud-label">الإشارة</span>
-                <span id="gps-status" class="hud-main-val">بانتظار GPS</span>
+            <div id="hud-top">
+                <div class="hud-card">
+                    <div class="icon-col">
+                        <i data-lucide="satellite" class="hud-icon"></i>
+                    </div>
+                    <div class="hud-val-box align-center">
+                        <span id="gps-status" class="hud-main-val">بانتظار GPS</span>
+                        <div class="signal-bars">
+                            <div class="bar active"></div>
+                            <div class="bar active"></div>
+                            <div class="bar active"></div>
+                            <div class="bar active"></div>
+                            <div class="bar"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="hud-card">
+                    <div class="icon-col">
+                        <i data-lucide="shield" class="hud-icon"></i>
+                    </div>
+                    <div class="hud-val-box align-center">
+                        <span id="zone-name" class="hud-main-val" style="color: var(--primary)">منطقة آمنة</span>
+                        <span class="hud-label" style="color: var(--primary); opacity: 1;">نشط</span>
+                    </div>
+                </div>
+
+                <div class="hud-card">
+                    <div class="hud-val-box align-right" style="width: 100%;">
+                        <span class="hud-label">إحداثيات GPS</span>
+                        <span id="coords-n" class="hud-main-val" style="direction: ltr; margin-top:5px">0.0000° N</span>
+                        <span id="coords-e" class="hud-main-val" style="direction: ltr;">0.0000° E</span>
+                    </div>
+                </div>
+
+                <div class="hud-card speed-card" id="speed-card">
+                    <div class="hud-val-box align-right">
+                        <span class="hud-label">سرعتك الحالية</span>
+                        <span class="hud-label" style="margin-top:20px;font-size:10px">كم/ساعة</span>
+                    </div>
+                    <div class="speed-gauge">
+                        <svg class="gauge-svg" viewBox="0 0 80 80">
+                            <circle class="gauge-bg" cx="40" cy="40" r="35"></circle>
+                            <circle id="speed-ring" class="gauge-progress" cx="40" cy="40" r="35"></circle>
+                        </svg>
+                        <div class="speed-text-center">
+                            <span class="speed-number" id="speed-val">0</span>
+                        </div>
+                    </div>
+                    <div class="speed-limit-badge" id="speed-limit-badge" title="الحد الأقصى للسرعة">
+                        <span id="speed-limit-val">--</span>
+                        <small>حد</small>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div class="hud-card">
-            <i data-lucide="map" class="hud-icon"></i>
-            <div class="hud-val-box">
-                <span class="hud-label">النطاق الحالي</span>
-                <span id="zone-name" class="hud-main-val" style="color: var(--primary)">منطقة آمنة</span>
+        </header>
+
+        <main class="map-container">
+            <div id="map"></div>
+            <div id="vignette"></div>
+
+            <div id="search-box">
+                <input type="text" id="destination-input" class="search-input" placeholder="ابحث عن وجهة..."
+                    onkeydown="handleSearch(event)">
+                <i data-lucide="search" class="search-ic"></i>
             </div>
-        </div>
-        <div class="hud-card">
-            <div class="hud-val-box">
-                <span class="hud-label">الإحداثيات الجغرافية</span>
-                <span id="coords" class="hud-main-val" style="font-size: 14px; direction: ltr;">0.000, 0.000</span>
-            </div>
-        </div>
-        <div class="hud-card" style="justify-content: space-between;">
-            <div class="hud-val-box">
-                <span class="hud-label">السرعة</span>
-                <span class="hud-main-val">كم/ساعة</span>
-            </div>
-            <div class="speed-gauge">
-                <svg class="gauge-svg" viewBox="0 0 80 80">
-                    <circle class="gauge-bg" cx="40" cy="40" r="35"></circle>
-                    <circle id="speed-ring" class="gauge-progress" cx="40" cy="40" r="35"></circle>
+
+            <div id="center-graph">
+                <svg width="120" height="30" viewBox="0 0 120 30" fill="none" stroke="var(--primary)"
+                    stroke-width="1.5">
+                    <path
+                        d="M0,30 L10,20 L20,25 L30,5 L40,15 L50,10 L60,28 L70,20 L80,25 L90,10 L100,15 L110,5 L120,30" />
+                    <path
+                        d="M0,30 L10,25 L20,28 L30,15 L40,20 L50,15 L60,30 L70,25 L80,28 L90,15 L100,20 L110,10 L120,30"
+                        stroke="rgba(255,255,255,0.2)" />
                 </svg>
-                <div class="speed-text-center" id="speed-val">0</div>
             </div>
-        </div>
-    </div>
 
-    <div id="search-box">
-        <i data-lucide="search" class="search-ic"></i>
-        <input type="text" id="destination-input" class="search-input" placeholder="ابحث عن وجهة..." onkeydown="handleSearch(event)">
-    </div>
+            <div id="nav-card">
+                <div class="nav-header">
+                    <div class="logo-text">
+                        <span class="logo-en" style="font-size:12px">PRECISION PRO</span>
+                        <span class="logo-ar" style="font-size:9px">بريسيشن برو</span>
+                    </div>
+                    <i data-lucide="navigation" style="color: var(--primary); width:20px"></i>
+                </div>
+                <div class="nav-dest">
+                    <i data-lucide="map-pin" style="width:16px; opacity:0.7"></i>
+                    <span>الوجهة: <span id="dest-name" style="font-weight:700">---</span></span>
+                </div>
+                <div class="nav-stats">
+                    المتبقي: <span id="nav-km" style="font-weight:700">---</span> | <span id="nav-min"
+                        style="font-weight:700">---</span>
+                </div>
+                <div class="nav-turn">
+                    <i data-lucide="corner-up-right" style="color:var(--primary)"></i>
+                    <span>منعطف قادم بعد 200 م</span>
+                </div>
+            </div>
 
-    <div id="nav-card">
-        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-            <i data-lucide="navigation" style="color: var(--primary)"></i>
-            <span style="font-weight: 900; font-size: 18px;">مسار الرحلة</span>
-        </div>
-        <div id="dest-name" style="opacity: 0.8; font-size: 14px; margin-bottom: 20px; line-height: 1.4;">---</div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-            <div><div class="hud-label">المسافة</div><div id="nav-km" style="font-weight: 900; font-size: 18px;">---</div></div>
-            <div><div class="hud-label">الزمن</div><div id="nav-min" style="font-weight: 900; font-size: 18px;">---</div></div>
-        </div>
+            <button id="start-btn"
+                style="position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--primary); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; font-size: 16px; cursor: pointer; box-shadow: 0 10px 40px rgba(0, 242, 255, 0.4);">
+                تفعيل النظام
+            </button>
+        </main>
     </div>
-
-    <div id="map"></div>
-    <div id="vignette"></div>
 
     <div id="modal-overlay" class="modal-overlay">
         <div class="modal">
             <div style="font-size: 60px; margin-bottom: 20px;">🚨</div>
             <h2 id="modal-title" style="margin-bottom: 15px; font-weight: 900;">تحذير أمني</h2>
             <p id="modal-body" style="opacity: 0.8; line-height: 1.6; margin-bottom: 30px;"></p>
-            <button onclick="closeModal()" style="background: var(--primary); color: #000; border: none; padding: 12px 40px; border-radius: 12px; font-weight: 900; cursor: pointer;">فهمت، سأنسحب</button>
+            <button onclick="closeModal()"
+                style="background: var(--primary); color: #000; border: none; padding: 12px 40px; border-radius: 12px; font-weight: 900; cursor: pointer;">فهمت،
+                سأنسحب</button>
         </div>
     </div>
-
-    <button id="start-btn" style="position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 1000; background: var(--primary); color: #000; border: none; padding: 15px 40px; border-radius: 50px; font-weight: 900; font-size: 18px; cursor: pointer; box-shadow: 0 10px 40px rgba(0, 242, 255, 0.4);">
-        تفعيل النظام
-    </button>
 
     <script>
         let map, userMarker, targetMarker, routePolyline;
         let isAuthorized = false;
         let currentPos = null;
-        let lastZone = null;
         let lastAlertTime = 0;
+        let lastSpeedLimitPos = null;
+        let currentSpeedLimit = null;
+        let avoidLayers = [];
 
         const zonesData = [
             {
-                name: "النطاق الأحمر (منطقة محظورة)",
+                name: "النطاق الأحمر (محظور)",
                 color: "#ff3860",
                 labelPos: [21.43, 39.81],
-                msg: "⚠️ منطقة محضورة أمنيا فقط المصرح لهم بدخول العاصمة المقدسة يمكنهم الدخول لها سيتم ايقاع مخالفة فورية",
-                coords: [[20.70150004379111, 39.74547620336583], [20.82109614701648, 39.83809601155372], [20.83942963736666, 39.84817340618953], [20.8436289141557, 39.88789178251207], [21.02580573547771, 39.86988112915366], [21.11647395240314, 39.91435018363975], [21.14557431973176, 39.92299252707362], [21.19564857117273, 39.93972288634575], [21.29405747843474, 40.07104446548749], [21.3377569063467, 40.18661339598307], [21.33695978005598, 40.26586873699659], [21.36126911758232, 40.26786290209701], [21.36168455283478, 40.26832486450851], [21.36176451338503, 40.2686036573539], [21.37087199213354, 40.2658301371425], [21.53723573992467, 40.28466763611192], [21.5523173013468, 40.32672919101677], [21.62142296855228, 40.39035396870963], [21.66275679466926, 40.39890770259256], [21.64208949646057, 40.32718557803213], [21.63451087917093, 40.28680337464734], [21.63501578261253, 40.24523782516165], [21.6305886618192, 40.22316227567907], [21.63097080100261, 40.19113492422682], [21.61833360372991, 40.16815219794162], [21.62129267814695, 40.14394064339548], [21.60978109906645, 40.11092653081775], [21.63933394202724, 40.0948339572515], [21.65891723092306, 40.06808737849082], [21.65693010933428, 40.02307213107491], [21.66898206918071, 39.98939145695884], [21.70502418716606, 39.97247295067518], [21.6856900280856, 39.9288486509768], [21.68192509457498, 39.90646452469439], [21.6924265048853, 39.90049407694579], [21.69239123399441, 39.87165004084191], [21.6778727601981, 39.8580730627732], [21.70943090991979, 39.81698582924813], [21.72405565394661, 39.7876250868062], [21.71546404404157, 39.75733172336524], [21.68219747764469, 39.72714100576981], [21.6318683680729, 39.70122897382493], [21.64195233727379, 39.65644338811498], [21.65409346112042, 39.63051766291512], [21.68237560652928, 39.56142486229131], [21.67555017484882, 39.55920640858917], [21.58857829305702, 39.53085155474616], [21.50537978260742, 39.60099696498023], [21.46255883710861, 39.56051291491933], [21.33755649367083, 39.5516446168989], [21.28248708406367, 39.55816772870512], [21.26014982272355, 39.56232345063864], [21.1619489109048, 39.59882249987461], [21.12437164068065, 39.59234747259856], [21.04247391859231, 39.59018913017329], [20.97934165519455, 39.57148349581971], [20.83352138967588, 39.63960181368336], [20.70150004379111, 39.74547620336583]]
+                msg: "⚠️ منطقة محظورة أمنياً. يرجى الانسحاب فوراً لتجنب المخالفات.",
+                coords: [[20.7015, 39.7455], [20.8211, 39.8381], [20.8394, 39.8482], [20.8436, 39.8879], [21.0258, 39.8699], [21.1165, 39.9144], [21.1456, 39.9230], [21.1956, 39.9397], [21.2941, 40.0710], [21.3378, 40.1866], [21.3370, 40.2659], [21.3613, 40.2679], [21.3617, 40.2683], [21.3618, 40.2686], [21.3709, 40.2658], [21.5372, 40.2847], [21.5523, 40.3267], [21.6214, 40.3904], [21.6628, 40.3989], [21.6421, 40.3272], [21.6345, 40.2868], [21.6350, 40.2452], [21.6306, 40.2232], [21.6310, 40.1911], [21.6183, 40.1682], [21.6213, 40.1439], [21.6098, 40.1109], [21.6393, 40.0948], [21.6589, 40.0681], [21.6569, 40.0231], [21.6690, 39.9894], [21.7050, 39.9725], [21.6857, 39.9288], [21.6819, 39.9065], [21.6924, 39.9005], [21.6924, 39.8717], [21.6779, 39.8581], [21.7094, 39.8170], [21.7241, 39.7876], [21.7155, 39.7573], [21.6822, 39.7271], [21.6319, 39.7012], [21.6420, 39.6564], [21.6541, 39.6305], [21.6824, 39.5614], [21.6756, 39.5592], [21.5886, 39.5309], [21.5054, 39.6010], [21.4626, 39.5605], [21.3376, 39.5516], [21.2825, 39.5582], [21.2601, 39.5623], [21.1619, 39.5988], [21.1244, 39.5923], [21.0425, 39.5902], [20.9793, 39.5715], [20.8335, 39.6396], [20.7015, 39.7455]]
             },
             {
-                name: "النطاق البرتقالي (منطقة تنظيمية)",
+                name: "النطاق البرتقالي (تنظيمي)",
                 color: "#F57C00",
                 labelPos: [21.40, 40.18],
-                msg: "⚠️ تحذير اخير أنت تقترب من منطقة منظمة أمنيا و مروريا سيتم ايقاع مخالفات فورية عند وصولك للنطاق الاحمر ",
-                coords: [[20.98402711391964, 40.20613532007761], [21.26255936858587, 40.40796584894989], [21.46319246084477, 40.5047016780823], [21.63114168312575, 40.46365063993856], [21.66990218212499, 40.48478184745079], [21.72174035851783, 40.48300556775168], [21.81509101032648, 39.91284660561679], [21.81611630115141, 39.88036606724239], [21.82377238543744, 39.82629359477693], [21.82395412209036, 39.81815407082109], [21.82455436304772, 39.80187290614962], [21.75341086205644, 39.55263111353519], [21.60516125046864, 39.49881280333808], [21.18176156176088, 39.53963460610744], [20.96967317014618, 39.5482560914313], [20.68340715846817, 39.70535490369484], [20.76892942543596, 40.02836696499121], [20.98402711391964, 40.20613532007761]]
-            },
-            {
-                name: "النطاق الأصفر (تحذير مبدئي)",
-                color: "#FFD700",
-                labelPos: [21.20, 39.55],
-                msg: "تحذير أنت تقترب من منطقة منظمة أمنيا و مروريا الرجاء توخي الاحاطة و الحذر",
-                coords: [[21.95144101986097, 39.79747233590614], [21.94973676349665, 39.78194062900019], [21.94970279523987, 39.76797233797541], [21.94980913420406, 39.75555372101563], [21.94993388245003, 39.74623749553317], [21.94260264331843, 39.71538284511906], [21.93507241988767, 39.70323613827328], [21.92749895364211, 39.69578282772083], [21.91756364666963, 39.68079837559202], [21.91259603855427, 39.67488195021906], [21.90520762063649, 39.66452345298082], [21.89533067926305, 39.65587872182157], [21.88561037636605, 39.64275399274819], [21.86961209118672, 39.62707280416645], [21.86497404095424, 39.62585643246457], [21.85821517320545, 39.62027711230245], [21.76134263428975, 39.46141279626785], [21.56674569393956, 39.4724082128771], [21.4089179339024, 39.44880280178614], [21.23853045583137, 39.47688905951601], [21.1427777605944, 39.50093476452514], [20.80395992402174, 39.55009872902003], [20.64134754766426, 39.70566464474572], [20.74109316617669, 40.05124729923209], [21.03333053156665, 40.4207273266706], [21.68381990064168, 40.873678781964], [21.95144101986097, 39.79747233590614]]
+                msg: "⚠️ تنبيه: تقترب من منطقة منظمة أمنياً. تأكد من حصولك على التصريح.",
+                coords: [[20.9840, 40.2061], [21.2626, 40.4080], [21.4632, 40.5047], [21.6311, 40.4637], [21.6699, 40.4848], [21.7217, 40.4830], [21.8151, 39.9128], [21.8161, 39.8804], [21.8238, 39.8263], [21.8240, 39.8182], [21.8246, 39.8019], [21.7534, 39.5526], [21.6052, 39.4988], [21.1818, 39.5396], [20.9697, 39.5483], [20.6834, 39.7054], [20.7689, 40.0284], [20.9840, 40.2061]]
             }
         ];
 
         function initMap() {
             lucide.createIcons();
             map = L.map('map', { zoomControl: false, attributionControl: false }).setView([21.4, 39.8], 11);
-            L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}').addTo(map);
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
 
             zonesData.forEach(z => {
-                L.polygon(z.coords, { color: z.color, fillOpacity: 0.15, weight: 2 }).addTo(map);
+                L.polygon(z.coords, { color: z.color, fillOpacity: 0.1, weight: 1.5, dashArray: '5, 5' }).addTo(map);
                 L.marker(z.labelPos || z.coords[0], {
-                    icon: L.divIcon({ className: 'z-lbl', html: `<div style="color:${z.color}; font-weight:900; font-size:12px; white-space:nowrap; background:rgba(0,0,0,0.6); padding:2px 8px; border-radius:5px;">${z.name}</div>` })
+                    icon: L.divIcon({ className: 'z-lbl', html: `<div style="color:${z.color}; font-weight:900; font-size:10px; background:rgba(0,0,0,0.5); padding:2px 6px; border-radius:4px; border:1px solid ${z.color}">${z.name}</div>` })
                 }).addTo(map);
             });
         }
@@ -225,22 +812,27 @@
             isAuthorized = !isAuthorized;
             const btn = document.getElementById('permit-btn');
             const icon = document.getElementById('permit-icon');
-            const text = document.getElementById('permit-text');
+            const label = document.getElementById('permit-label');
 
             if (isAuthorized) {
-                btn.classList.add('authorized');
+                btn.style.borderColor = 'var(--primary)';
                 icon.setAttribute('data-lucide', 'shield-check');
                 icon.style.color = 'var(--primary)';
-                text.innerText = 'مصرح له';
-                speak("تم تفعيل تصريح الدخول. التنبيهات معطلة.");
+                label.innerText = 'مصرح';
+                label.style.color = 'var(--primary)';
+                showToast("✅ تم تفعيل التصريح - المسار مباشر");
+                speak("تم تفعيل التصريح، المسار الآن مباشر عبر المناطق المحظورة");
             } else {
-                btn.classList.remove('authorized');
+                btn.style.borderColor = 'var(--danger)';
                 icon.setAttribute('data-lucide', 'shield-alert');
                 icon.style.color = 'var(--danger)';
-                text.innerText = 'غير مصرح';
-                speak("تصريح الدخول ملغى. التنبيهات مفعلة.");
+                label.innerText = 'غير مصرح';
+                label.style.color = 'var(--danger)';
+                showToast("⚠️ تم إلغاء التصريح - المسار يتجنب المناطق المحظورة");
+                speak("تم إلغاء التصريح، سيتم تحويل المسار لتجنب المناطق المحظورة");
             }
             lucide.createIcons();
+            if (targetMarker) planRoute(targetMarker.getLatLng());
         }
 
         async function handleSearch(e) {
@@ -260,84 +852,142 @@
 
         function setDestination(coords, name) {
             if (targetMarker) map.removeLayer(targetMarker);
-            targetMarker = L.marker(coords).addTo(map);
+            targetMarker = L.marker(coords, { icon: L.divIcon({ className: 'dest-pin', html: '<i data-lucide="map-pin" style="color:#ff3860; fill:#ff3860"></i>' }) }).addTo(map);
             document.getElementById('nav-card').style.display = 'block';
-            document.getElementById('dest-name').innerText = name;
-            updateRoute(coords);
+            document.getElementById('dest-name').innerText = name.split(',')[0];
+            lucide.createIcons();
+            planRoute(coords);
         }
 
-        async function updateRoute(dest) {
+        function isInside(lat, lon, polygon) {
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                const xi = polygon[i][0], yi = polygon[i][1];
+                const xj = polygon[j][0], yj = polygon[j][1];
+                if (((yi > lon) !== (yj > lon)) && (lat < (xj - xi) * (lon - yi) / (yj - yi) + xi)) inside = !inside;
+            }
+            return inside;
+        }
+
+        function findSafeWaypoints(from, to, zone) {
+            const boundary = zone.coords;
+            let bestPoint = null;
+            let minDistSum = Infinity;
+
+            // Simple logic: pick 4 candidate points around the zone edge and find the one that minimizes detour
+            const centroid = boundary.reduce((acc, p) => [acc[0] + p[0] / boundary.length, acc[1] + p[1] / boundary.length], [0, 0]);
+
+            for (let angle = 0; angle < 360; angle += 45) {
+                const rad = angle * Math.PI / 180;
+                // Move 15km (approx 0.14 degrees) away from centroid
+                const candidate = [centroid[0] + Math.cos(rad) * 0.25, centroid[1] + Math.sin(rad) * 0.25];
+                if (!isInside(candidate[0], candidate[1], zone.coords)) {
+                    const d = Math.hypot(candidate[0] - from[0], candidate[1] - from[1]) + Math.hypot(candidate[0] - to[0], candidate[1] - to[1]);
+                    if (d < minDistSum) { minDistSum = d; bestPoint = candidate; }
+                }
+            }
+            return bestPoint ? [bestPoint] : [];
+        }
+
+        async function planRoute(dest) {
             if (!currentPos) return;
+            if (routePolyline) map.removeLayer(routePolyline);
+            avoidLayers.forEach(l => map.removeLayer(l));
+            avoidLayers = [];
+
+            const redZone = zonesData[0];
+            let waypoints = [];
+            let isDetour = false;
+
+            // Check if direct line intersects red zone
+            const steps = 20;
+            for (let i = 1; i < steps; i++) {
+                const checkPt = [currentPos[0] + (dest[0] - currentPos[0]) * i / steps, currentPos[1] + (dest[1] - currentPos[1]) * i / steps];
+                if (!isAuthorized && isInside(checkPt[0], checkPt[1], redZone.coords)) {
+                    isDetour = true;
+                    waypoints = findSafeWaypoints(currentPos, dest, redZone);
+                    break;
+                }
+            }
+
+            const wpStr = [currentPos, ...waypoints, dest].map(p => `${p[1]},${p[0]}`).join(';');
+            const url = `https://router.project-osrm.org/route/v1/driving/${wpStr}?overview=full&geometries=geojson`;
+
             try {
-                const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${currentPos[1]},${currentPos[0]};${dest[1]},${dest[0]}?overview=full&geometries=geojson&alternatives=3`);
+                const res = await fetch(url);
                 const data = await res.json();
-                
-                if (data.routes && data.routes.length > 0) {
-                    let selectedRoute = data.routes[0];
-
-                    if (!isAuthorized) {
-                        const safeRoute = data.routes.find(r => !checkPathDanger(r.geometry));
-                        if (safeRoute) {
-                            selectedRoute = safeRoute;
-                        } else {
-                            speak("تنبيه: جميع المسارات المتاحة تمر عبر مناطق محظورة. يرجى الحذر.");
-                        }
-                    }
-
-                    if (routePolyline) map.removeLayer(routePolyline);
-                    
-                    const isDangerous = checkPathDanger(selectedRoute.geometry);
-                    const routeColor = isDangerous && !isAuthorized ? 'var(--danger)' : 'var(--primary)';
-                    
-                    routePolyline = L.geoJSON(selectedRoute.geometry, { 
-                        style: { color: routeColor, weight: 6, opacity: 0.7 } 
+                if (data.routes && data.routes[0]) {
+                    routePolyline = L.geoJSON(data.routes[0].geometry, {
+                        style: { color: isDetour ? '#ffcc00' : 'var(--primary)', weight: 6, opacity: 0.8, dashArray: isDetour ? '10, 10' : '' }
                     }).addTo(map);
 
-                    document.getElementById('nav-km').innerText = (selectedRoute.distance / 1000).toFixed(1) + ' كم';
-                    document.getElementById('nav-min').innerText = Math.round(selectedRoute.duration / 60) + ' دقيقة';
+                    document.getElementById('nav-km').innerText = (data.routes[0].distance / 1000).toFixed(1) + ' كم';
+                    document.getElementById('nav-min').innerText = Math.round(data.routes[0].duration / 60) + ' د';
+                    map.fitBounds(routePolyline.getBounds(), { padding: [50, 50] });
+
+                    if (isDetour) {
+                        waypoints.forEach(wp => {
+                            const m = L.circleMarker(wp, { radius: 6, color: '#ffcc00', fillOpacity: 1 }).addTo(map);
+                            avoidLayers.push(m);
+                        });
+                    }
                 }
             } catch (err) { console.error(err); }
         }
 
-        function checkPathDanger(routeGeoJSON) {
-            const redZones = zonesData.filter(z => z.color === "#ff3860");
-            for (const zone of redZones) {
-                const polyCoords = [zone.coords.map(c => [c[1], c[0]])];
-                if (polyCoords[0][0][0] !== polyCoords[0][polyCoords[0].length-1][0]) {
-                    polyCoords[0].push(polyCoords[0][0]);
+        async function getSpeedLimit(lat, lon) {
+            // Overpass API for maxspeed
+            const query = `[out:json];way(around:30,${lat},${lon})[maxspeed];out tags;`;
+            try {
+                const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (data.elements && data.elements.length > 0) {
+                    const limit = parseInt(data.elements[0].tags.maxspeed);
+                    if (!isNaN(limit)) {
+                        currentSpeedLimit = limit;
+                        document.getElementById('speed-limit-val').innerText = limit;
+                        return;
+                    }
                 }
-                const zonePoly = turf.polygon(polyCoords);
-                if (turf.booleanIntersects(routeGeoJSON, zonePoly)) return true;
-            }
-            return false;
+                document.getElementById('speed-limit-val').innerText = '--';
+                currentSpeedLimit = null;
+            } catch (e) { console.error("Speed limit error", e); }
         }
-
-        document.getElementById('start-btn').onclick = function() {
-            this.style.display = 'none';
-            if (navigator.geolocation) {
-                navigator.geolocation.watchPosition(updateTracking, null, { enableHighAccuracy: true });
-            }
-        };
 
         function updateTracking(pos) {
             const { latitude, longitude, speed } = pos.coords;
             currentPos = [latitude, longitude];
-            
-            document.getElementById('coords').innerText = `${latitude.toFixed(5)}, ${longitude.toFixed(5)}`;
-            document.getElementById('gps-status').innerText = "متصل";
-            document.getElementById('gps-status').style.color = "var(--primary)";
-
             const kmh = Math.round((speed || 0) * 3.6);
-            document.getElementById('speed-val').innerText = kmh;
-            const offset = 220 - (kmh / 160) * 220; 
-            document.getElementById('speed-ring').style.strokeDashoffset = Math.max(0, offset);
 
+            // Update GPS HUD
+            document.getElementById('coords-n').innerText = `${latitude.toFixed(4)}° N`;
+            document.getElementById('coords-e').innerText = `${longitude.toFixed(4)}° E`;
+            document.getElementById('gps-status').innerText = "متصل";
+
+            // Update Speedometer
+            document.getElementById('speed-val').innerText = kmh;
+            const offset = 165 - Math.min(1, kmh / 160) * 165;
+            document.getElementById('speed-ring').style.strokeDashoffset = offset;
+
+            // Speed Limit Logic
+            if (!lastSpeedLimitPos || Math.hypot(latitude - lastSpeedLimitPos[0], longitude - lastSpeedLimitPos[1]) > 0.0005) {
+                getSpeedLimit(latitude, longitude);
+                lastSpeedLimitPos = [latitude, longitude];
+            }
+
+            const speedCard = document.getElementById('speed-card');
+            if (currentSpeedLimit && kmh > currentSpeedLimit) {
+                speedCard.classList.add('speed-over');
+            } else {
+                speedCard.classList.remove('speed-over');
+            }
+
+            // Update Marker
             if (!userMarker) {
                 userMarker = L.marker(currentPos, { icon: L.divIcon({ className: 'user-marker', iconSize: [24, 24] }) }).addTo(map);
                 map.setView(currentPos, 15);
             } else {
                 userMarker.setLatLng(currentPos);
-                map.panTo(currentPos);
             }
 
             checkZones(latitude, longitude);
@@ -345,16 +995,7 @@
 
         function checkZones(lat, lon) {
             let found = null;
-            const userPt = turf.point([lon, lat]);
-
-            zonesData.forEach(z => {
-                const polyCoords = [z.coords.map(c => [c[1], c[0]])];
-                if (polyCoords[0][0][0] !== polyCoords[0][polyCoords[0].length-1][0]) {
-                    polyCoords[0].push(polyCoords[0][0]);
-                }
-                const zonePoly = turf.polygon(polyCoords);
-                if (turf.booleanPointInPolygon(userPt, zonePoly)) found = z;
-            });
+            zonesData.forEach(z => { if (isInside(lat, lon, z.coords)) found = z; });
 
             const zoneLabel = document.getElementById('zone-name');
             const body = document.body;
@@ -362,16 +1003,13 @@
             if (found) {
                 zoneLabel.innerText = found.name;
                 zoneLabel.style.color = found.color;
-
-                if (!isAuthorized) {
+                if (!isAuthorized && found.name.includes("أحمر")) {
                     body.classList.add('red-alert');
-                    if (Date.now() - lastAlertTime > 15000) {
+                    if (Date.now() - lastAlertTime > 20000) {
                         showModal(found.name, found.msg);
                         speak(found.msg);
                         lastAlertTime = Date.now();
                     }
-                } else {
-                    body.classList.remove('red-alert');
                 }
             } else {
                 zoneLabel.innerText = "منطقة آمنة";
@@ -386,18 +1024,33 @@
             document.getElementById('modal-overlay').style.display = 'flex';
         }
 
-        function closeModal() {
-            document.getElementById('modal-overlay').style.display = 'none';
+        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
+
+        function showToast(msg) {
+            const t = document.createElement('div');
+            t.style.cssText = "position:fixed; bottom:120px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.8); color:#fff; padding:10px 20px; border-radius:20px; z-index:9999; font-size:12px; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1);";
+            t.innerText = msg;
+            document.body.appendChild(t);
+            setTimeout(() => t.remove(), 3000);
         }
 
         function speak(text) {
-            if (!text) return;
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'ar-SA';
-            window.speechSynthesis.speak(utterance);
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            const u = new SpeechSynthesisUtterance(text);
+            u.lang = 'ar-SA';
+            window.speechSynthesis.speak(u);
         }
+
+        document.getElementById('start-btn').onclick = function () {
+            this.style.display = 'none';
+            if (navigator.geolocation) {
+                navigator.geolocation.watchPosition(updateTracking, null, { enableHighAccuracy: true });
+            }
+        };
 
         initMap();
     </script>
 </body>
+
 </html>
