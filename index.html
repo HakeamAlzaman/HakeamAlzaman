@@ -256,14 +256,53 @@
             if (navigator.geolocation) navigator.geolocation.watchPosition(updatePos, null, { enableHighAccuracy: true });
         }
 
+        let lastSpeedPos = null, currentSpeedLimit = null;
+
+        async function getSpeedLimit(lat, lon) {
+            const query = `[out:json];way(around:30,${lat},${lon})[maxspeed];out tags;`;
+            try {
+                const res = await fetch(`https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`);
+                const data = await res.json();
+                if (data.elements && data.elements.length > 0) {
+                    const limit = parseInt(data.elements[0].tags.maxspeed);
+                    if (!isNaN(limit)) {
+                        currentSpeedLimit = limit;
+                        document.getElementById('limit-val').innerText = limit;
+                        return;
+                    }
+                }
+                document.getElementById('limit-val').innerText = '--';
+                currentSpeedLimit = null;
+            } catch (e) { console.error("Speed limit error", e); }
+        }
+
         function updatePos(p) {
             const { latitude, longitude, speed } = p.coords;
             pos = [latitude, longitude];
             document.getElementById('coord-n').innerText = `${latitude.toFixed(4)}° N`;
             document.getElementById('coord-e').innerText = `${longitude.toFixed(4)}° E`;
+            
             const kmh = Math.round((speed || 0) * 3.6);
             document.getElementById('speed-val').innerText = kmh;
             document.getElementById('speed-bar').style.strokeDashoffset = 165 - Math.min(1, kmh / 160) * 165;
+
+            // Update Speed Limit every 50 meters
+            if (!lastSpeedPos || Math.hypot(latitude - lastSpeedPos[0], longitude - lastSpeedPos[1]) > 0.0005) {
+                getSpeedLimit(latitude, longitude);
+                lastSpeedPos = [latitude, longitude];
+            }
+
+            // Speeding Warning
+            const speedCard = document.getElementById('speed-val').parentElement.parentElement.parentElement;
+            if (currentSpeedLimit && kmh > currentSpeedLimit) {
+                speedCard.style.boxShadow = "0 0 20px rgba(255, 0, 68, 0.6)";
+                speedCard.style.borderColor = "var(--danger)";
+                if (kmh > currentSpeedLimit + 5 && Math.random() < 0.1) speak("تنبيه: تجاوزت الحد المسموح للسرعة");
+            } else {
+                speedCard.style.boxShadow = "0 4px 15px rgba(0,0,0,0.4)";
+                speedCard.style.borderColor = "var(--border)";
+            }
+
             if (!userMarker) {
                 userMarker = L.marker(pos, { icon: L.divIcon({ className: 'user-dot' }) }).addTo(map);
                 map.setView(pos, 15);
