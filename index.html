@@ -312,11 +312,24 @@
 
         function checkZones(lat, lon) {
             let found = null;
+            let maxRisk = 0;
             const pt = turf.point([lon, lat]);
+
             zonesData.forEach(z => {
                 const poly = turf.polygon([z.coords.map(c => [c[1], c[0]]).concat([[z.coords[0][1], z.coords[0][0]]])]);
-                if (turf.booleanPointInPolygon(pt, poly)) found = z;
+                if (turf.booleanPointInPolygon(pt, poly)) {
+                    let risk = 0;
+                    if (z.color === "#ff3860") risk = 3;      // Red
+                    else if (z.color === "#f57c00") risk = 2; // Orange
+                    else if (z.color === "#ffcc00") risk = 1; // Yellow
+                    
+                    if (risk > maxRisk) {
+                        maxRisk = risk;
+                        found = z;
+                    }
+                }
             });
+
             const lbl = document.getElementById('zone-name'), body = document.body;
             if (found) {
                 lbl.innerText = found.name.split(' ')[1]; lbl.style.color = found.color;
