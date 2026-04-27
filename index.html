@@ -294,31 +294,28 @@
 
         async function findSafeRouteViaWaypoints(start, dest) {
             const red = zonesData.find(z => z.color === "#ff3860");
-            const polyCoords = red.coords.map(c => [c[1], c[0]]);
-            const poly = turf.polygon([polyCoords.concat([polyCoords[0]])]);
-            const center = turf.centerOfMass(poly).geometry.coordinates;
+            // تمرير إحداثيات النطاق الأحمر بالكامل لخدمة BRouter كمنطقة محظورة (nogopolygons)
+            const polyString = red.coords.map(c => `${c[1]},${c[0]}`).join(',');
+            const url = `https://brouter.de/brouter?lonlats=${start[0]},${start[1]}|${dest[0]},${dest[1]}&profile=car-fast&format=geojson&nogopolygons=${polyString}`;
             
-            const len = red.coords.length;
-            const step = Math.max(1, Math.floor(len / 8)); 
-            
-            for (let i = 0; i < len; i += step) {
-                const c = red.coords[i];
-                const pt = turf.point([c[1], c[0]]);
-                const bearing = turf.bearing(turf.point(center), pt);
-                // إزاحة النقطة لتكون خارج النطاق بمسافة كافية (مثلاً 10 كم)
-                const outsidePt = turf.destination(pt, 10, bearing).geometry.coordinates;
+            try {
+                const res = await fetch(url);
+                const data = await res.json();
                 
-                try {
-                    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${start[0]},${start[1]};${outsidePt[0]},${outsidePt[1]};${dest[0]},${dest[1]}?overview=full&geometries=geojson`);
-                    const data = await res.json();
-                    if (data.routes && data.routes.length > 0) {
-                        const r = data.routes[0];
-                        if (!checkPathDanger(r.geometry)) {
-                            return r; // وجدنا مساراً آمناً
-                        }
+                if (data && data.features && data.features.length > 0) {
+                    const feature = data.features[0];
+                    // تحويل المخرجات لتتطابق مع تنسيق OSRM
+                    const r = {
+                        geometry: feature.geometry,
+                        distance: parseInt(feature.properties["track-length"]),
+                        duration: parseInt(feature.properties["total-time"])
+                    };
+                    
+                    if (!checkPathDanger(r.geometry)) {
+                        return r; // وجدنا مساراً آمناً
                     }
-                } catch (e) { console.error("Waypoint routing error:", e); }
-            }
+                }
+            } catch (e) { console.error("BRouter routing error:", e); }
             return null;
         }
 
