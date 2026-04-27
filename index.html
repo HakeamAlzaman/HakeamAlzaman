@@ -294,35 +294,55 @@
 
         async function findSafeRouteViaWaypoints(start, dest) {
             const red = zonesData.find(z => z.color === "#ff3860");
-            // تمرير إحداثيات النطاق الأحمر بالكامل لخدمة BRouter كمنطقة محظورة (nogopolygons)
-            const polyString = red.coords.map(c => `${c[1]},${c[0]}`).join(',');
-            const url = `https://brouter.de/brouter?lonlats=${start[0]},${start[1]}|${dest[0]},${dest[1]}&profile=car-fast&format=geojson&nogopolygons=${polyString}`;
+            const polyCoords = red.coords.map(c => [c[1], c[0]]);
+            const poly = turf.polygon([polyCoords.concat([polyCoords[0]])]);
+            const center = turf.centerOfMass(poly).geometry.coordinates;
             
-            try {
-                const res = await fetch(url);
-                const data = await res.json();
+            const len = red.coords.length;
+            const step = Math.max(1, Math.floor(len / 12)); // 12 اتجاهات مختلفة
+            
+            // نحاول إيجاد مسار عبر وضع نقاط التفاف حول النطاق بمسافات متزايدة
+            for (let i = 0; i < len; i += step) {
+                const pt = turf.point([red.coords[i][1], red.coords[i][0]]);
+                const bearing = turf.bearing(turf.point(center), pt);
                 
-                if (data && data.features && data.features.length > 0) {
-                    const feature = data.features[0];
-                    // تحويل المخرجات لتتطابق مع تنسيق OSRM
-                    const r = {
-                        geometry: feature.geometry,
-                        distance: parseInt(feature.properties["track-length"]),
-                        duration: parseInt(feature.properties["total-time"])
-                    };
+                // نجرب إزاحة النقطة للخارج بـ 5 ثم 15 ثم 25 كيلومتر لضمان تجاوز النطاق
+                for (const dist of [5, 15, 25]) {
+                    const wp = turf.destination(pt, dist, bearing).geometry.coordinates;
                     
-                    // نعتمد مسار BRouter مباشرة لأنه تم حسابه ليتفادى المنطقة
-                    // لا نستخدم checkPathDanger هنا لأن تقريب الخرائط قد يعطي تقاطعاً وهمياً بسيطاً
-                    return r; 
+                    try {
+                        const url = `https://router.project-osrm.org/route/v1/driving/${start[0]},${start[1]};${wp[0]},${wp[1]};${dest[0]},${dest[1]}?overview=full&geometries=geojson`;
+                        const res = await fetch(url);
+                        const data = await res.json();
+                        if (data.routes && data.routes.length > 0) {
+                            const r = data.routes[0];
+                            if (!checkPathDanger(r.geometry)) {
+                                return r; // وجدنا المسار الآمن
+                            }
+                        }
+                    } catch (e) { }
                 }
-            } catch (e) { console.error("BRouter routing error:", e); }
+            }
             return null;
         }
 
         function checkPathDanger(routeGeo) {
             const red = zonesData.find(z => z.color === "#ff3860");
-            const poly = turf.polygon([red.coords.map(c => [c[1], c[0]]).concat([[red.coords[0][1], red.coords[0][0]]])]);
-            return turf.booleanIntersects(routeGeo, poly);
+            const polyCoords = red.coords.map(c => [c[1], c[0]]);
+            const poly = turf.polygon([polyCoords.concat([polyCoords[0]])]);
+            
+            let insideCount = 0;
+            const coords = routeGeo.type === 'LineString' ? routeGeo.coordinates : routeGeo.coordinates[0];
+            
+            // نتحقق من النقاط الفعلية للمسار لتجنب التقاطعات الوهمية عند الحدود
+            for (let i = 0; i < coords.length; i += 3) {
+                if (turf.booleanPointInPolygon(turf.point(coords[i]), poly)) {
+                    insideCount++;
+                    // إذا كان هناك أكثر من نقطتين داخليتين، فهذا يعني أن المسار يمر حقاً داخل النطاق
+                    if (insideCount > 2) return true; 
+                }
+            }
+            return false;
         }
 
         let wakeLock = null;
